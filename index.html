@@ -574,7 +574,8 @@ function cloudRows(filter){
 }
 async function openCloudList(){
  if(!Cloud.active()){alert("Bitte zuerst anmelden, um aus der Datenbank zu öffnen.");return}
- dlg('<h3>Aus Datenbank öffnen</h3><div style="font-size:11px;color:var(--g2)">Gemeinsame Referenzliste aller aktiven Nutzer. „Löschen" ist nur bei eigenen Referenzen möglich; ein Sicherungsstand bleibt erhalten.</div><input type="text" id="cloudF" placeholder="Suchen (Titel, Kunde, Veranstaltung, E-Mail) ..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--g4);border-radius:8px;font-size:.9rem;margin:10px 0 6px"><div id="cloudL" style="max-height:52vh;overflow:auto;border-top:1px solid var(--g5)"></div><div class="wzb"><span class="sp"></span><button class="pri" data-cl="close">Schließen</button></div>');
+ dlg('<h3>Aus Datenbank öffnen</h3><div style="font-size:11px;color:var(--g2)">Gemeinsame Referenzliste aller aktiven Nutzer. „Löschen" ist nur bei eigenen Referenzen möglich; ein Sicherungsstand bleibt erhalten.</div><input type="text" id="cloudF" placeholder="Suchen (Titel, Kunde, Veranstaltung, E-Mail) ..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--g4);border-radius:8px;font-size:.9rem;margin:10px 0 6px"><div id="cloudL" style="max-height:52vh;overflow:auto;border-top:1px solid var(--g5)"></div><div class="wzb"><span class="sp"></span><button class="pri" id="cloudX">Schließen</button></div>');
+ document.getElementById("cloudX").onclick=()=>document.getElementById("dlg").close();
  const f=document.getElementById("cloudF"),list=document.getElementById("cloudL");
  list.onclick=e=>{const ob=e.target.closest("[data-open]");if(ob){cloudOpen(ob.dataset.open);return}const db=e.target.closest("[data-del]");if(db){cloudRemove(db.dataset.del,db.dataset.title);return}if(e.target.closest("[data-cl]")){document.getElementById("dlg").close()}};
  f.oninput=()=>{list.innerHTML=cloudRows(f.value)};
