@@ -41,7 +41,7 @@ class HttpError extends Error {
   }
 }
 
-export function checkPublicUrl(url) {
+export async function checkPublicUrl(url) {
   let u;
   try {
     u = new URL(url);
@@ -69,15 +69,17 @@ export function checkPublicUrl(url) {
     if (!g || ipv6Forbidden(g)) throw new Error("Interne Adressen sind nicht erlaubt");
     return;
   }
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
+    throw new Error("Interne Adressen sind nicht erlaubt");
+  }
   let ips = [];
   if (typeof Deno !== "undefined" && Deno.resolveDns) {
     try {
-      ips = ips.concat(awaitPromises([Deno.resolveDns(host, "A"), Deno.resolveDns(host, "AAAA")]));
+      ips = await awaitPromises([Deno.resolveDns(host, "A"), Deno.resolveDns(host, "AAAA")]);
     } catch {
-      throw new Error("Adresse nicht auflösbar");
+      ips = [];
     }
   }
-  if (!ips.length) throw new Error("Interne Adressen sind nicht erlaubt");
   for (const ip of ips) {
     const iv4 = ipv4ToInt(ip);
     if (iv4 !== -1) {
@@ -288,7 +290,7 @@ async function fetchLimited(resp) {
 async function fetchUrl(url) {
   let cur = url;
   for (let i = 0; i < 4; i++) {
-    checkPublicUrl(cur);
+    await checkPublicUrl(cur);
     let resp;
     try {
       resp = await fetch(cur, {
