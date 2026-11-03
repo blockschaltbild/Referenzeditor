@@ -641,7 +641,7 @@ function kiHint(){return "KI-Analyse ist noch nicht eingerichtet (Edge Function 
 async function checkServer(){
  const el=document.getElementById("srvst");const b=document.getElementById("bAna");
  try{
-  const {data,error}=await Cloud.sb.functions.invoke("referenz-ki",{body:{action:"status"}});
+  const {data,error}=await kiInvoke("status",{},20000);
   if(error)throw error;
   SRV={key:!!(data&&data.key),model:data&&data.model};
   if(el)el.innerHTML=SRV.key?`Verbunden mit Abacus, Modell <b>${esc(SRV.model||"")}</b>, API-Schlüssel gefunden.`:"<b style='color:#c0392b'>"+kiHint()+"</b>";
@@ -705,11 +705,20 @@ function busyHide(done){
  else{o.classList.remove("on");document.body.style.overflow=""}
 }
 document.addEventListener("keydown",e=>{if(document.getElementById("busy").classList.contains("on")){if(e.key==="Tab"||e.key==="Escape"||e.key.length===1)e.preventDefault()}},true);
-function kiInvoke(action,payload,ms){
- return Promise.race([
-  Cloud.sb.functions.invoke("referenz-ki",{body:Object.assign({action:action},payload)}),
-  new Promise((_,rej)=>{setTimeout(()=>{const e=new Error("Zeitüberschreitung (über 4 Minuten).");e.name="AbortError";rej(e)},ms||280000)})
- ]);
+async function kiInvoke(action,payload,ms){
+ const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),ms||280000);
+ try{
+  const {data:{session}}=await Cloud.sb.auth.getSession();
+  if(!session)return{data:null,error:new Error("Nicht angemeldet. Bitte Seite neu laden und anmelden.")};
+  let r;
+  try{r=await fetch(SUPABASE_CONFIG.url+"/functions/v1/referenz-ki",{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_CONFIG.anonKey},body:JSON.stringify(Object.assign({action:action},payload))})}
+  catch(e){
+   if(e&&e.name==="AbortError"){const x=new Error("Zeitüberschreitung (über 4 Minuten).");x.name="AbortError";return{data:null,error:x}}
+   return{data:null,error:new Error("Keine Verbindung zur Funktion ("+((e&&e.message)||e)+", Größe der Anfrage "+Math.round(JSON.stringify(payload).length/1024)+" KB, online: "+navigator.onLine+")")}}
+  let j=null,t="";try{t=await r.text();j=JSON.parse(t)}catch(e){}
+  if(!r.ok){const x=new Error((j&&j.error)||("HTTP "+r.status+(t?": "+t.slice(0,200):"")));x.context={json:async()=>j||{}};return{data:j,error:x}}
+  return{data:j,error:null}
+ }finally{clearTimeout(tm)}
 }
 async function kiErrText(e){
  if(e&&e.context&&typeof e.context.json==="function"){
