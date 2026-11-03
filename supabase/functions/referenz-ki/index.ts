@@ -471,6 +471,8 @@ async function requireUser(req) {
   const p = profile;
   const active = p && !p.blocked && (p.role === "admin" || (p.access_expires_at && new Date(p.access_expires_at).getTime() > Date.now()));
   if (!active) return { status: 403 };
+  const mail = String(data.user.email || "").toLowerCase();
+  if (p.role !== "admin" && !mail.endsWith("@ict.de")) return { status: 403 };
   return { status: 0, user: data.user };
 }
 
