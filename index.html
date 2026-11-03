@@ -698,7 +698,7 @@ function kiInvoke(action,payload,ms){
 }
 async function kiErrText(e){
  if(e&&e.context&&typeof e.context.json==="function"){
-  try{const j=await e.context.json();return j.error||e.message||String(e)}catch(x){return e.message||String(e)}
+  try{const j=await e.context.json();const bad=(j.pages||[]).filter(p=>p.error).map(p=>p.url+": "+p.error).join(" | ");return (j.error||e.message||String(e))+(bad?" ["+bad+"]":"")}catch(x){return e.message||String(e)}
  }
  return (e&&e.message)||String(e);
 }
