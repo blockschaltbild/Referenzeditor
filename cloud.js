@@ -122,6 +122,10 @@
         return new Date(profile.access_expires_at).getTime() > Date.now();
     }
 
+    function isIctEmail(s) {
+        return /^[^\s@]+@ict\.de$/i.test(String(s || '').trim());
+    }
+
     function isValidEmail(s) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
     }
@@ -171,9 +175,14 @@
         }
         await loadProfile();
 
+        const admin = state.profile && state.profile.role === 'admin';
+        if (!admin && !isIctEmail(state.user.email)) {
+            state.profile = null;
+        }
         if (!isActive(state.profile)) {
             let reason = 'Dein Zugang ist nicht aktiv.';
-            if (state.profile && state.profile.blocked) reason = 'Dein Konto wurde gesperrt. Bitte wende dich an den Administrator.';
+            if (!admin && !isIctEmail(state.user.email)) reason = 'Der Referenzgenerator ist nur für E-Mail-Adressen @ict.de freigegeben.';
+            else if (state.profile && state.profile.blocked) reason = 'Dein Konto wurde gesperrt. Bitte wende dich an den Administrator.';
             else if (state.profile) reason = 'Dein Zugang ist abgelaufen. Bitte wende dich an den Administrator, um ihn zu verlängern.';
             showOverlay(reason);
             showMsg('error', reason);
@@ -209,6 +218,7 @@
         const email = $('authEmail').value.trim();
         const password = $('authPassword').value;
         if (!isValidEmail(email)) { showMsg('error', 'Bitte eine gültige E-Mail-Adresse eingeben.'); return; }
+        if (authMode === 'register' && !isIctEmail(email)) { showMsg('error', 'Die Registrierung ist nur mit einer E-Mail-Adresse @ict.de möglich.'); return; }
         $('authSubmit').disabled = true;
         try {
             if (authMode === 'register') {
