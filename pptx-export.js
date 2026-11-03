@@ -454,9 +454,10 @@
       setText(a[41 + i], v ? "✓  " + v : "", null);
     }
 
-    if (str(D.footer)) {
-      setText(a[46], str(D.footer), null);
-      setText(b[60], str(D.footer), null);
+    const footer = typeof window !== "undefined" && window.footText ? window.footText(D) : str(D.footer);
+    if (footer) {
+      setText(a[46], footer, null);
+      setText(b[60], footer, null);
     }
 
     var img = D.img && typeof D.img === "object" ? D.img : {};
