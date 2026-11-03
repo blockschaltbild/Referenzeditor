@@ -143,10 +143,9 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
  <button id="bSave" class="ic" title="In Datenbank speichern" aria-label="In Datenbank speichern"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3"/><rect x="7" y="13" width="10" height="7"/></svg></button>
  <span class="sp"></span>
  <span id="saveState" style="font-size:11px;font-weight:600"></span>
- <button id="bUeb">Überschriften zurücksetzen</button>
  <button id="bCheck">Schritt für Schritt prüfen</button>
- <button id="bPpt" title="Referenzblatt als PowerPoint-Datei (Vorlage LOS04) erstellen">PPT erstellen</button>
- <button id="bPdf">PDF erstellen / drucken</button>
+ <button id="bPpt" title="Referenzblatt als PowerPoint-Datei (Vorlage LOS04) und als PDF erstellen">PPT/PDF erstellen</button>
+ <button id="bPdf">Drucken</button>
  <div id="accountWidget" style="display:none"></div>
  <input type="file" id="fImg" accept="image/*" hidden>
 </header>
@@ -166,6 +165,8 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
 <script src="vendor/supabase.js"></script>
 <script src="config.js"></script>
 <script src="vendor/jszip.min.js"></script>
+<script src="vendor/html2canvas.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
 <script src="pptx-export.js"></script>
 <script src="cloud.js"></script>
 <script>
@@ -543,17 +544,27 @@ function editTechRow(ri){const d=document.getElementById("ask"),f=document.getEl
  d.showModal();g("tk").focus()}
 function askText(title,hint,cur,ph,cb,o){const d=document.getElementById("ask"),f=document.getElementById("askf");const ar=o&&o.area;f.innerHTML=`<h3></h3><div class="hint"></div>${o&&o.def?'<div class="defb"><b>Erwartete Angaben</b><div id="askd"></div></div>':""}${ar?'<textarea id="askv" rows="8"></textarea>':'<input type="text" id="askv">'}<div class="hint" id="askn"></div><div class="wzb"><button type="button" class="del" id="askc">Abbrechen</button><span class="sp"></span><button type="button" id="askr">Zurücksetzen</button><button type="submit" class="pri">Übernehmen</button></div>`;f.querySelector("h3").textContent=title;f.querySelector(".hint").textContent=hint;const dd=f.querySelector("#askd");if(dd)dd.textContent=o.def.split("\n").map(x=>o.def.indexOf("\n")>=0?"• "+x:x).join("\n");const i=f.querySelector("#askv");i.value=cur||"";i.placeholder=ph||"";if(ar)i.style.cssText="min-height:160px;font:13px/1.45 Montserrat,Arial,sans-serif";const n=f.querySelector("#askn"),cnt=()=>{n.textContent=o&&o.lim?i.value.length+" / "+o.lim+" Zeichen":"";n.style.color=o&&o.lim&&i.value.length>o.lim?"#c0392b":""};cnt();i.oninput=cnt;let ok=false;f.onsubmit=()=>{ok=true};f.querySelector("#askc").onclick=()=>d.close();f.querySelector("#askr").onclick=()=>{i.value="";cnt()};i.onkeydown=e=>{if(ar&&e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();ok=true;d.close()}};d.onclose=()=>{if(ok)cb(i.value)};d.showModal();i.focus();if(!ar)i.select()}
 function dlg(html){$("#dlgin").innerHTML=html;$("#dlg").showModal()}
-$("#bUeb").onclick=()=>{if(confirm("Alle umbenannten Überschriften auf den Standard zurücksetzen?")){D.h=blank().h;changed()}};
 $("#bCheck").onclick=()=>wizStart();
+async function buildPdfBlob(){
+ const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a4",orientation:"portrait"});
+ const css="*{-webkit-print-color-adjust:exact}.page .ph,.page .imgbox .ph{visibility:hidden}.page .imgbox:not(:has(img)){border:0!important;background:none}.page .ovf{outline:0}.page .addrow{display:none}.page .td.rh{outline:0;background:none}.page .hk:hover{outline:0;background:none}.page{box-shadow:none;zoom:1!important}";
+ const ps=[...document.querySelectorAll("#sheets .page")];
+ for(let i=0;i<ps.length;i++){
+  const c=await html2canvas(ps[i],{scale:3,backgroundColor:"#fff",useCORS:true,logging:false,onclone:d=>{const st=d.createElement("style");st.textContent=css;d.head.appendChild(st)}});
+  if(i)doc.addPage();doc.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297)}
+ return doc.output("blob")}
 $("#bPpt").onclick=async()=>{
- const b=$("#bPpt"),t=b.textContent,fn=baseName()+".pptx";let fh=null;
- if(window.showSaveFilePicker){try{fh=await window.showSaveFilePicker({suggestedName:fn,startIn:"downloads",types:[{description:"PowerPoint-Präsentation",accept:{"application/vnd.openxmlformats-officedocument.presentationml.presentation":[".pptx"]}}]})}catch(e){if(e&&e.name==="AbortError")return;fh=null}}
+ const b=$("#bPpt"),t=b.textContent,bn=baseName();let dh=null;
+ if(window.showDirectoryPicker){try{dh=await window.showDirectoryPicker({id:"referenz-ziel",mode:"readwrite",startIn:"downloads"})}catch(e){if(e&&e.name==="AbortError")return;dh=null}}
  b.disabled=true;b.textContent="Wird erstellt ...";
- try{
-  const bl=await window.buildReferenzPptx(D);
-  if(fh){const w=await fh.createWritable();await w.write(bl);await w.close();}
-  else{const a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
- }catch(e){alert("PowerPoint konnte nicht erstellt werden: "+e.message)}
+ const out=async(bl,fn)=>{
+  if(dh){const f=await dh.getFileHandle(fn,{create:true});const w=await f.createWritable();await w.write(bl);await w.close()}
+  else{const a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}};
+ let err=[];
+ try{await out(await window.buildReferenzPptx(D),bn+".pptx")}catch(e){err.push("PowerPoint: "+e.message)}
+ try{await out(await buildPdfBlob(),bn+".pdf")}catch(e){err.push("PDF: "+e.message)}
+ if(err.length)alert("Fehler beim Erstellen:\n"+err.join("\n"));
+ else if(dh)alert("Gespeichert im Ordner \""+dh.name+"\":\n"+bn+".pptx\n"+bn+".pdf");
  b.disabled=false;b.textContent=t};
 $("#bPdf").onclick=()=>{const t=document.title;document.title=baseName();window.print();document.title=t};
 window.dlg_=$("#dlg");
