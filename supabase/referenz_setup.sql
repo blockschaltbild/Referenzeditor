@@ -55,13 +55,18 @@ drop policy if exists reference_insert_admin   on public.reference_projects;
 drop policy if exists reference_update_admin   on public.reference_projects;
 drop policy if exists reference_delete_admin   on public.reference_projects;
 
+create or replace function public.is_ict_user()
+returns boolean language sql stable as $$
+    select lower(coalesce(auth.jwt() ->> 'email', '')) like '%@ict.de';
+$$;
+
 create policy reference_select_active on public.reference_projects
-    for select using (public.is_active() and deleted_at is null);
+    for select using (public.is_ict_user() and public.is_active() and deleted_at is null);
 create policy reference_insert_active on public.reference_projects
-    for insert with check (public.is_active() and created_by = auth.uid());
+    for insert with check (public.is_ict_user() and public.is_active() and created_by = auth.uid());
 create policy reference_update_active on public.reference_projects
-    for update using (public.is_active() and deleted_at is null)
-              with check (public.is_active());
+    for update using (public.is_ict_user() and public.is_active() and deleted_at is null)
+              with check (public.is_ict_user() and public.is_active());
 
 create policy reference_select_admin on public.reference_projects for select using (public.is_admin());
 create policy reference_insert_admin on public.reference_projects for insert with check (public.is_admin());
