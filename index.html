@@ -436,7 +436,7 @@ document.addEventListener("dragleave",e=>{e.target.closest?.("[data-drop]")?.cla
 document.addEventListener("drop",e=>{const d=e.target.closest?.("[data-drop]");if(d){e.preventDefault();d.classList.remove("drag");addFiles(d.dataset.drop,e.dataTransfer.files)}});
 
 function slug(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ß/g,"ss").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40)}
-function baseName(){return `LOS04_P13_Referenz_${D.nr||"XX"}_${slug(D.kunde)||"Kunde"}_${slug(D.veranstaltung.split(",")[0])||"Event"}`}
+function baseName(){return `Referenz_${D.nr||"XX"}_${slug(D.kunde)||"Kunde"}_${slug(D.veranstaltung.split(",")[0])||"Event"}`}
 function openPoints(){
  const out=[];const add=(sec,l,v)=>{if(isOpen(v))out.push(`${sec}: ${l}`)};
  add("Kopf","Referenz-Nr.",D.nr);add("Kopf","Veranstaltungsart",D.art);add("Kopf","Kunde",D.kunde);add("Kopf","Veranstaltung, Ort",D.veranstaltung);
