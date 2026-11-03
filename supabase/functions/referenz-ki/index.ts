@@ -92,15 +92,12 @@ export async function checkPublicUrl(url) {
 }
 
 async function awaitPromises(promises) {
+  const settled = await Promise.allSettled(promises);
   const out = [];
-  for (const p of promises) {
-    try {
-      out.push(...await p);
-    } catch {
-      out.push([]);
-    }
+  for (const r of settled) {
+    if (r.status === "fulfilled" && Array.isArray(r.value)) out.push(...r.value);
   }
-  return out.flat();
+  return out;
 }
 
 function ipv4ToInt(ip) {
