@@ -169,7 +169,7 @@ const LOGO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABJ4AAAH2CAYAAAAxjEZ6AA
 const FOOT_OLD="TRUMPF Medien- und Veranstaltungstechnik  |  LOS 04 – Punkt 13: Referenzen und Erfahrungsnachweise";
 const FOOT="";
 function footAuto(d){const nm=[d.kunde,String(d.veranstaltung||"").split(",")[0]].map(x=>String(x||"").trim()).filter(Boolean).join(" ");return `${String(d.nr||"").trim()||"[Projektnummer]"} ${nm||"[Projektname]"} - Referenz- und Erfahrungsnachweis`}
-function footText(d){const f=String(d.footer||"").trim();return f&&f!==FOOT_OLD.trim()?f:footAuto(d)}
+function footText(d){const f=String(d.footer||"").trim();return f&&!/TRUMPF\s+Medien|LOS\s*04|Punkt\s*13/i.test(f)?f:footAuto(d)}
 window.footText=footText;
 const TILE_DEF=[["VERANSTALTUNG","Name / Format"],["ORT","Location, Stadt"],["ZEITRAUM","TT.–TT. Monat JJJJ"],["TEILNEHMENDE","Anzahl vor Ort / remote"],["AUFTRAGGEBER","Kunde, Sitz"],["PARTNER / AGENTUR","Agentur, Sitz"],["LEISTUNG ICT","z. B. Medientechnik"],["PERSONAL ICT","Anzahl, Rollen"]];
 const PH_DEF=[["01  Planung","Abstimmung, Konzept, Begehung"],["02  Vorbereitung","Disposition, Vorkonfiguration, Tests"],["03  Aufbau und Betrieb","Aufbau, Proben, Betreuung"],["04  Abbau und Nachbereitung","Rückbau, Dokumentation, Review"]];
