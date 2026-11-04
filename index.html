@@ -339,6 +339,12 @@ function imgb(im,x,y,w,h,txt,key){const ck=key?` hk" data-img="${key}" data-drop
  const bx=x+(w-bw)/2,by=y+(h-bh)/2;
  return `<div class="imgbox${ck}" style="left:${bx}cm;top:${by}cm;width:${bw}cm;height:${bh}cm;background:none"><img src="${im.data}" style="${imgStyle(im)}"></div>`;
 }
+function techHeights(rs,cw){
+ const c=techHeights.c||(techHeights.c=document.createElement("canvas").getContext("2d"));c.font="300 9.333px Montserrat,Arial,sans-serif";
+ const lines=(t,w)=>{const mw=(w-.4)*37.795;let n=0;String(t||"").split("\n").forEach(p=>{let cur="";const ws=p.split(/\s+/);let cnt=1;ws.forEach(x=>{const tr=cur?cur+" "+x:x;if(c.measureText(tr).width<=mw||!cur)cur=tr;else{cnt++;cur=x}});n+=cnt});return n};
+ const need=rs.map(r=>Math.max(lines(r.k,cw[0]),lines(r.u,cw[1]),lines(r.e,cw[2]))>1?2:1);
+ let budget=4.05-.65*rs.length;
+ return need.map(n=>{if(n>1&&budget>=.3){budget-=.3;return .95}return .65})}
 function page1(){
  let h=head();
  h+=T("h1",1.5,2.2,14,1,D.kunde,"[Kunde / Auftraggeber]","white-space:nowrap","","kunde")+T("h2",1.5,3.2,18,.7,D.veranstaltung,"[Veranstaltung, Ort]","","","veranstaltung");
@@ -370,8 +376,9 @@ function page2(){
  [HH("th1"),HH("th2"),HH("th3")].forEach((c,i)=>h+=`<div class="th hk" data-edit="h.th${i+1}" title="Klicken zum Umbenennen" style="left:${cx[i]}cm;top:8.7cm;width:${cw[i]}cm;height:.65cm;padding:.2cm .2cm 0">${c}</div>`);
  const idx=D.tech.map((r,i)=>i).filter(i=>{const r=D.tech[i];return r.k||r.u||r.e});const rows=idx.map(i=>D.tech[i]);const rr=rows.length?rows:[{k:"[Komponente]",u:"[Menge / Größe]",e:"[Einsatzzweck]"}];
  const nxt=D.tech.findIndex(r=>!(r.k||r.u||r.e));
- rr.slice(0,5).forEach((r,j)=>{const y=9.35+j*.65,e=!rows.length,ri=rows.length?idx[j]:(nxt<0?D.tech.length:nxt);[r.k,r.u,r.e].forEach((v,i)=>h+=`<div class="td t hk${e?" ph":""}" data-cv="techrow.${ri}" data-row="${ri}" title="Ganze Zeile bearbeiten" style="left:${cx[i]}cm;top:${y}cm;width:${cw[i]}cm;height:.65cm;padding:.2cm .2cm 0;white-space:nowrap;text-overflow:ellipsis">${esc(v)}</div>`)});
- if(rows.length&&rows.length<5&&nxt>=0){const y=9.35+rows.length*.65;h+=`<div class="td t addrow" data-cv="techrow.${nxt}" title="Zeile hinzufügen (max. 5)" style="left:1.5cm;top:${y}cm;width:18cm;height:.65cm">+  Zeile hinzufügen</div>`}
+ const rs=rr.slice(0,5),hs=techHeights(rs,cw);let yy=9.35;
+ rs.forEach((r,j)=>{const y=yy,rh=hs[j];yy+=rh;const e=!rows.length,ri=rows.length?idx[j]:(nxt<0?D.tech.length:nxt);[r.k,r.u,r.e].forEach((v,i)=>h+=`<div class="td t hk${e?" ph":""}" data-cv="techrow.${ri}" data-row="${ri}" title="Ganze Zeile bearbeiten" style="left:${cx[i]}cm;top:${y}cm;width:${cw[i]}cm;height:${rh}cm;padding:${rh>.7?".15":".2"}cm .2cm 0;white-space:normal;word-break:break-word;line-height:1.2">${esc(v)}</div>`)});
+ if(rows.length&&rows.length<5&&nxt>=0&&yy+.65<=13.4){h+=`<div class="td t addrow" data-cv="techrow.${nxt}" title="Zeile hinzufügen (max. 5)" style="left:1.5cm;top:${yy}cm;width:18cm;height:.65cm">+  Zeile hinzufügen</div>`}
  h+=R(1.5,13.5,.1,.4,"#4D49BC")+T("hd",1.8,13.4,17.7,.5,HH("ablauf"),"","","h.ablauf");
  const px=[1.5,6.1,10.6,15.2];
  D.phasen.forEach((p,i)=>{h+=R(px[i],14.1,4.3,.1,"#8977F3")+T("ph1",px[i],14.4,4.3,.4,p.t,"","",`phasen.${i}.t`)+T("ph2",px[i],14.9,4.3,.4,p.z,"[Zeitraum]","","",`phasen.${i}.z`)+`<div class="t ph3 hk${p.x.trim()?"":" ph"}" data-cv="phasen.${i}.x" title="Klicken zum Bearbeiten" data-ov style="left:${px[i]}cm;top:15.3cm;width:4.3cm;height:1.8cm">${esc(p.x.trim()?p.x:"["+PH_DEF[i][1]+"]")}</div>`});
