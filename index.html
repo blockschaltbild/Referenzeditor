@@ -583,10 +583,11 @@ async function cloudSave(){
 function loadProject(p){D=Object.assign(blank(),p);D.h=Object.assign(blank().h,p.h);D.img=Object.assign({bild1:null,bild2:null,extra:[]},p.img);renderForm();changed()}
 let cloudItems=[];
 const fmtCloudDate=iso=>{if(!iso)return"";const d=new Date(iso);if(isNaN(d))return"";const p=n=>String(n).padStart(2,"0");return `${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`};
+const cloudKey=v=>{const n=x=>String(x||"").toLowerCase().replace(/\s+/g," ").trim();return n(v.nr)?"nr:"+n(v.nr):"t:"+n(v.title||(v.kunde+" "+v.veranstaltung))};
 function cloudLatest(items){
- const seen=new Set(),n=x=>String(x||"").toLowerCase().replace(/\s+/g," ").trim();
+ const seen=new Set();
  return items.slice().sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at)).filter(v=>{
-  const k=n(v.nr)?"nr:"+n(v.nr):"t:"+n(v.title||(v.kunde+" "+v.veranstaltung));
+  const k=cloudKey(v);
   if(seen.has(k))return false;seen.add(k);return true})}
 function cloudRows(filter){
  const q=(filter||"").toLowerCase();
@@ -615,9 +616,11 @@ async function cloudOpen(id){
  document.getElementById("dlg").close();
 }
 async function cloudRemove(id,title){
- if(!confirm("Referenz \u201e"+title+"\u201c wirklich löschen? Der Eintrag verschwindet aus der gemeinsamen Liste; ein Sicherungsstand bleibt automatisch erhalten."))return;
- try{const r=await Cloud.remove(id);if(r.error)throw new Error(r.error)}
- catch(e){alert("Löschen fehlgeschlagen: "+e.message);return}
+ const cur=cloudItems.find(v=>v.id===id),grp=cur?cloudItems.filter(v=>cloudKey(v)===cloudKey(cur)):[{id:id}];
+ if(!confirm("Referenz \u201e"+title+"\u201c wirklich löschen?"+(grp.length>1?" Alle "+grp.length+" gespeicherten Stände dieses Projekts werden entfernt.":"")+" Der Eintrag verschwindet aus der gemeinsamen Liste; ein Sicherungsstand bleibt automatisch erhalten."))return;
+ const fail=[];
+ for(const g of grp){try{const r=await Cloud.remove(g.id);if(r.error)throw new Error(r.error)}catch(e){fail.push(e.message)}}
+ if(fail.length)alert("Nicht alle Stände konnten gelöscht werden ("+fail.length+" von "+grp.length+"): "+fail[0]);
  try{const r=await Cloud.list();if(r.error)throw new Error(r.error);cloudItems=r.data||[]}
  catch(e){return}
  const list=document.getElementById("cloudL"),f=document.getElementById("cloudF");
