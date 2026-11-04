@@ -341,7 +341,7 @@
                         .maybeSingle();
                     if (cur && cur.updated_at && cur.updated_at !== state.loadedUpdatedAt) {
                         const when = new Date(cur.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                        const ok = confirm('Ein anderer Nutzer hat diese Referenz um ' + when + ' Uhr gespeichert, nachdem du sie geladen hast.\n\nDer alte Stand bleibt als Sicherung erhalten.\n\nTrotzdem überschreiben?');
+                        const ok = await uiConfirm('Ein anderer Nutzer hat diese Referenz um ' + when + ' Uhr gespeichert, nachdem du sie geladen hast.\n\nDer alte Stand bleibt als Sicherung erhalten.\n\nTrotzdem überschreiben?');
                         if (!ok) return { cancelled: true };
                     }
                 }
