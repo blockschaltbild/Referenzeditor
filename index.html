@@ -346,7 +346,7 @@ function techHeights(rs,cw){
  const lines=(t,w)=>{const mw=(w-.4)*37.795;let n=0;String(t||"").split("\n").forEach(p=>{let cur="";const ws=p.split(/\s+/);let cnt=1;ws.forEach(x=>{const tr=cur?cur+" "+x:x;if(c.measureText(tr).width<=mw||!cur)cur=tr;else{cnt++;cur=x}});n+=cnt});return n};
  const need=rs.map(r=>Math.max(lines(r.k,cw[0]),lines(r.u,cw[1]),lines(r.e,cw[2]))>1?2:1);
  let budget=4.05-.65*rs.length;
- return need.map(n=>{if(n>1&&budget>=.3){budget-=.3;return .95}return .65})}
+ return need.map(n=>{if(n>1&&budget>=.15){budget-=.15;return .8}return .65})}
 function page1(){
  let h=head();
  h+=T("h1",1.5,2.2,14,1,D.kunde,"[Kunde / Auftraggeber]","white-space:nowrap","","kunde")+T("h2",1.5,3.2,18,.7,D.veranstaltung,"[Veranstaltung, Ort]","","","veranstaltung");
@@ -379,7 +379,7 @@ function page2(){
  const idx=D.tech.map((r,i)=>i).filter(i=>{const r=D.tech[i];return r.k||r.u||r.e});const rows=idx.map(i=>D.tech[i]);const rr=rows.length?rows:[{k:"[Komponente]",u:"[Menge / Größe]",e:"[Einsatzzweck]"}];
  const nxt=D.tech.findIndex(r=>!(r.k||r.u||r.e));
  const rs=rr.slice(0,5),hs=techHeights(rs,cw);let yy=9.35;
- rs.forEach((r,j)=>{const y=yy,rh=hs[j];yy+=rh;const e=!rows.length,ri=rows.length?idx[j]:(nxt<0?D.tech.length:nxt);[r.k,r.u,r.e].forEach((v,i)=>h+=`<div class="td t hk${e?" ph":""}" data-cv="techrow.${ri}" data-row="${ri}" title="Ganze Zeile bearbeiten" style="left:${cx[i]}cm;top:${y}cm;width:${cw[i]}cm;height:${rh}cm;padding:${rh>.7?".15":".2"}cm .2cm 0;white-space:normal;word-break:break-word;line-height:1.2">${esc(v)}</div>`)});
+ rs.forEach((r,j)=>{const y=yy,rh=hs[j];yy+=rh;const e=!rows.length,ri=rows.length?idx[j]:(nxt<0?D.tech.length:nxt);[r.k,r.u,r.e].forEach((v,i)=>h+=`<div class="td t hk${e?" ph":""}" data-cv="techrow.${ri}" data-row="${ri}" title="Ganze Zeile bearbeiten" style="left:${cx[i]}cm;top:${y}cm;width:${cw[i]}cm;height:${rh}cm;padding:${rh>.7?".12":".2"}cm .2cm 0;white-space:normal;word-break:break-word;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden">${esc(v)}</div>`)});
  if(rows.length&&rows.length<5&&nxt>=0&&yy+.65<=13.4){h+=`<div class="td t addrow" data-cv="techrow.${nxt}" title="Zeile hinzufügen (max. 5)" style="left:1.5cm;top:${yy}cm;width:18cm;height:.65cm">+  Zeile hinzufügen</div>`}
  h+=R(1.5,13.5,.1,.4,"#4D49BC")+T("hd",1.8,13.4,17.7,.5,HH("ablauf"),"","","h.ablauf");
  const px=[1.5,6.1,10.6,15.2];
