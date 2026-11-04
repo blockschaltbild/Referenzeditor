@@ -28,7 +28,7 @@ button.pri{background:var(--blue);color:#fff}button.pri:hover{background:var(--l
 button.sm{padding:4px 8px;font-size:11px}
 button.del{background:var(--g6);color:var(--g1)}
 #app.fc{grid-template-columns:1fr}#app.fc #form{display:none}
-#fcb{position:fixed;z-index:20;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;background:#fff;color:var(--violet);border:1px solid var(--g4);border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer}#fcb:hover{background:var(--g6)}#fcb svg{transition:transform .15s}#app.fc #fcb svg{transform:rotate(180deg)}
+#fcb{position:fixed;z-index:20;width:20px;height:64px;padding:0;display:flex;align-items:center;justify-content:center;background:#fff;color:var(--violet);border:1px solid var(--g4);border-left:0;border-radius:0 12px 12px 0;box-shadow:2px 0 6px rgba(0,0,0,.15);cursor:pointer;transition:background .15s,width .15s}#fcb:hover{background:var(--l3);width:24px}#fcb svg{transition:transform .15s}#app.fc #fcb svg{transform:rotate(180deg)}
 #form{overflow:auto;padding:12px 14px 60px;background:#fff;border-right:1px solid var(--g5)}
 #pv{overflow:auto;padding:16px;background:var(--g5)}
 details{border:1px solid var(--g5);border-radius:8px;margin:0 0 10px;background:#fff}
@@ -393,7 +393,7 @@ function applyZoom(){if(zoom===null)zoom=fitZoom();document.querySelectorAll(".p
 $("#zm").onclick=()=>{zoom=Math.max(.3,zoom-.1);applyZoom()};
 $("#zp").onclick=()=>{zoom=Math.min(1.6,zoom+.1);applyZoom()};
 $("#zf").onclick=()=>{zoom=fitZoom();applyZoom()};
-function posFc(){const b=$("#fcb"),h=document.querySelector("header.bar"),fc=$("#app").classList.contains("fc");b.style.top=(h.offsetHeight+8)+"px";b.style.left=fc?"10px":Math.max(10,$("#form").getBoundingClientRect().right-46)+"px"}
+function posFc(){const b=$("#fcb"),h=document.querySelector("header.bar"),fc=$("#app").classList.contains("fc"),top=h.offsetHeight,vh=window.innerHeight-top;b.style.top=Math.round(top+vh/2-32)+"px";b.style.left=fc?"0px":Math.round($("#form").getBoundingClientRect().right)+"px"}
 function setFc(on){$("#app").classList.toggle("fc",on);const t=on?"Eingabebereich einblenden":"Eingabebereich ausblenden";$("#fcb").title=t;$("#fcb").setAttribute("aria-label",t);try{localStorage.setItem("ref_fc",on?"1":"0")}catch(e){}posFc();if(zoomAuto){zoom=fitZoom();applyZoom()}}
 $("#fcb").onclick=()=>setFc(!$("#app").classList.contains("fc"));
 window.addEventListener("resize",posFc);if(window.ResizeObserver){const ro=new ResizeObserver(posFc);ro.observe(document.querySelector("header.bar"));ro.observe($("#form"))}
