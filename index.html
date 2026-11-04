@@ -609,15 +609,14 @@ window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.return
 async function cloudSave(){
  if(RO){uiAlert("Diese Referenz gehört "+(roOwner||"einem anderen Nutzer")+" und ist nur zur Ansicht freigegeben. Speichern ist nicht möglich.");return}
  if(!Cloud.active()){uiAlert("Bitte zuerst anmelden, um in der Datenbank zu speichern.");return}
- const b=$("#bSave"),t=b.textContent;b.disabled=true;b.textContent="Speichern ...";
+ const b=$("#bSave");b.disabled=true;b.style.opacity=".5";
  try{
   const r=await Cloud.save(D,{id:currentCloudId});
   if(r&&r.cancelled)return;
   if(r&&r.error)throw new Error(r.error);
   currentCloudId=r.id;currentCloudUpdatedAt=r.updated_at;dirty=false;renderSaveState();
-  b.textContent="Gespeichert";setTimeout(()=>{if($("#bSave").textContent==="Gespeichert")$("#bSave").textContent=t},1600);
  }catch(e){uiAlert("Speichern fehlgeschlagen: "+e.message)}
- finally{b.disabled=false;if(b.textContent==="Speichern ...")b.textContent=t}
+ finally{b.disabled=RO;b.style.opacity=""}
 }
 function loadProject(p){D=Object.assign(blank(),p);D.h=Object.assign(blank().h,p.h);D.img=Object.assign({bild1:null,bild2:null,extra:[]},p.img);renderForm();changed()}
 let cloudItems=[];
