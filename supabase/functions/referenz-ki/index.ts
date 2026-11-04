@@ -210,6 +210,46 @@ export function htmlToText(html) {
   return { title, text: s };
 }
 
+export function repairJson(src) {
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (!inStr) {
+      if (c === ",") {
+        let j = i + 1;
+        while (j < src.length && /\s/.test(src[j])) j++;
+        if (src[j] === "}" || src[j] === "]") continue;
+      }
+      if (c === '"') inStr = true;
+      out += c;
+      continue;
+    }
+    if (c === "\\") {
+      out += c + (src[i + 1] ?? "");
+      i++;
+      continue;
+    }
+    if (c === "\n") { out += "\\n"; continue; }
+    if (c === "\r") continue;
+    if (c === "\t") { out += "\\t"; continue; }
+    if (c === '"') {
+      let j = i + 1;
+      while (j < src.length && /\s/.test(src[j])) j++;
+      const n = src[j];
+      if (n === undefined || n === "," || n === "}" || n === "]" || n === ":") {
+        inStr = false;
+        out += c;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    out += c;
+  }
+  return out;
+}
+
 export function extractJson(text) {
   const t = String(text || "")
     .trim()
@@ -219,7 +259,12 @@ export function extractJson(text) {
   const a = t.indexOf("{");
   const b = t.lastIndexOf("}");
   if (a < 0 || b < a) throw new Error("Keine JSON-Antwort der KI erhalten");
-  return JSON.parse(t.slice(a, b + 1));
+  const raw = t.slice(a, b + 1);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return JSON.parse(repairJson(raw));
+  }
 }
 
 export function buildUserPrompt(payload, pages) {
@@ -503,8 +548,22 @@ async function doAnalyze(payload) {
     });
   }
   try {
-    const { text, usage } = await callLlm(key, SYSTEM, buildUserPrompt(payload, pages));
-    const result = extractJson(text);
+    const prompt = buildUserPrompt(payload, pages);
+    let { text, usage } = await callLlm(key, SYSTEM, prompt);
+    let result;
+    try {
+      result = extractJson(text);
+    } catch (e1) {
+      if (!(e1 instanceof SyntaxError)) throw e1;
+      const again = await callLlm(
+        key,
+        SYSTEM,
+        prompt + "\n\nWICHTIG: Antworte ausschließlich mit gültigem JSON. Anführungszeichen innerhalb von Texten als \\\" maskieren oder typografische „…“ verwenden, keine Zeilenumbrüche in Strings.",
+      );
+      text = again.text;
+      usage = again.usage;
+      result = extractJson(text);
+    }
     return json(200, { result, model: MODEL, usage, pages: summary(pages) });
   } catch (e) {
     const msg = e instanceof Error ? e.message || "" : String(e);
