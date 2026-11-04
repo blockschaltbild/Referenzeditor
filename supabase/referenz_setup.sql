@@ -65,8 +65,8 @@ create policy reference_select_active on public.reference_projects
 create policy reference_insert_active on public.reference_projects
     for insert with check (public.is_ict_user() and public.is_active() and created_by = auth.uid());
 create policy reference_update_active on public.reference_projects
-    for update using (public.is_ict_user() and public.is_active() and deleted_at is null)
-              with check (public.is_ict_user() and public.is_active());
+    for update using (public.is_ict_user() and public.is_active() and deleted_at is null and created_by = auth.uid())
+              with check (public.is_ict_user() and public.is_active() and created_by = auth.uid());
 
 create policy reference_select_admin on public.reference_projects for select using (public.is_admin());
 create policy reference_insert_admin on public.reference_projects for insert with check (public.is_admin());
