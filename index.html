@@ -639,9 +639,10 @@ async function cloudOpen(id){
  try{r=await Cloud.load(id);if(r.error)throw new Error(r.error)}
  catch(e){alert("Konnte Referenz nicht laden: "+e.message);return}
  if(dirty&&!confirm("Ungespeicherte Änderungen gehen verloren. Referenz trotzdem öffnen?"))return;
+ setRO(false);
  loadProject(r.data);
  currentCloudId=id;currentCloudUpdatedAt=r.updated_at;dirty=false;
- {const it=cloudItems.find(v=>v.id===id);setRO(!(it&&it.owner),it&&it.created_by_email)}
+ {const it=cloudItems.find(v=>v.id===id);setRO(!(it&&it.owner),it&&it.created_by_email);if(RO)clearTimeout(saveT)}
  document.getElementById("dlg").close();
 }
 async function cloudRemove(id,title){
