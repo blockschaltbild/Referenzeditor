@@ -282,11 +282,10 @@
         const gate = await requireActive();
         if (gate) return gate;
         try {
-            const { data, error } = await client
-                .from('reference_projects')
-                .select('id,nr,kunde,veranstaltung,art,title,created_by,created_by_email,updated_by_email,created_at,updated_at')
-                .is('deleted_at', null)
-                .order('updated_at', { ascending: false });
+            const cols = 'id,nr,kunde,veranstaltung,art,title,created_by,created_by_email,updated_by_email,created_at,updated_at';
+            const q = (s) => client.from('reference_projects').select(s).is('deleted_at', null).order('updated_at', { ascending: false });
+            let { data, error } = await q(cols + ',tiles:data->tiles,tech:data->tech');
+            if (error) ({ data, error } = await q(cols));
             if (error) throw error;
             const uid = state.user && state.user.id;
             return { data: (data || []).map(r => Object.assign({}, r, { owner: r.created_by === uid })) };
