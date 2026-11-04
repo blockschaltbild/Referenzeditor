@@ -146,7 +146,7 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
  <span class="sp"></span>
  <span id="saveState" style="font-size:11px;font-weight:600"></span>
  <button id="bCheck">Schritt für Schritt prüfen</button>
- <button id="bPpt" title="Referenzblatt als PowerPoint-Datei (Vorlage LOS04) und als PDF erstellen">PPT/PDF erstellen</button>
+ <button id="bPpt" title="Referenzblatt als PowerPoint-Datei (Vorlage LOS04) erstellen">PPT erstellen</button>
  <button id="bPdf">Drucken</button>
  <div id="accountWidget" style="display:none"></div>
  <input type="file" id="fImg" accept="image/*" hidden>
@@ -168,8 +168,6 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
 <script src="vendor/supabase.js"></script>
 <script src="config.js"></script>
 <script src="vendor/jszip.min.js"></script>
-<script src="vendor/html2canvas.min.js"></script>
-<script src="vendor/jspdf.umd.min.js"></script>
 <script src="pptx-export.js"></script>
 <script src="cloud.js"></script>
 <script>
@@ -553,14 +551,6 @@ function editTechRow(ri){const d=document.getElementById("ask"),f=document.getEl
 function askText(title,hint,cur,ph,cb,o){const d=document.getElementById("ask"),f=document.getElementById("askf");const ar=o&&o.area;f.innerHTML=`<h3></h3><div class="hint"></div>${o&&o.def?'<div class="defb"><b>Erwartete Angaben</b><div id="askd"></div></div>':""}${ar?'<textarea id="askv" rows="8"></textarea>':'<input type="text" id="askv">'}<div class="hint" id="askn"></div><div class="wzb"><button type="button" class="del" id="askc">Abbrechen</button><span class="sp"></span><button type="button" id="askr">Zurücksetzen</button><button type="submit" class="pri">Übernehmen</button></div>`;f.querySelector("h3").textContent=title;f.querySelector(".hint").textContent=hint;const dd=f.querySelector("#askd");if(dd)dd.textContent=o.def.split("\n").map(x=>o.def.indexOf("\n")>=0?"• "+x:x).join("\n");const i=f.querySelector("#askv");i.value=cur||"";i.placeholder=ph||"";if(ar)i.style.cssText="min-height:160px;font:13px/1.45 Montserrat,Arial,sans-serif";const n=f.querySelector("#askn"),cnt=()=>{n.textContent=o&&o.lim?i.value.length+" / "+o.lim+" Zeichen":"";n.style.color=o&&o.lim&&i.value.length>o.lim?"#c0392b":""};cnt();i.oninput=cnt;let ok=false;f.onsubmit=()=>{ok=true};f.querySelector("#askc").onclick=()=>d.close();f.querySelector("#askr").onclick=()=>{i.value="";cnt()};i.onkeydown=e=>{if(ar&&e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();ok=true;d.close()}};d.onclose=()=>{if(ok)cb(i.value)};d.showModal();i.focus();if(!ar)i.select()}
 function dlg(html){$("#dlgin").innerHTML=html;$("#dlg").showModal()}
 $("#bCheck").onclick=()=>wizStart();
-async function buildPdfBlob(){
- const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:"mm",format:"a4",orientation:"portrait"});
- const css="*{-webkit-print-color-adjust:exact}.page .ph,.page .imgbox .ph{visibility:hidden}.page .imgbox:not(:has(img)){border:0!important;background:none}.page .ovf{outline:0}.page .addrow{display:none}.page .td.rh{outline:0;background:none}.page .hk:hover{outline:0;background:none}.page{box-shadow:none;zoom:1!important}";
- const ps=[...document.querySelectorAll("#sheets .page")];
- for(let i=0;i<ps.length;i++){
-  const c=await html2canvas(ps[i],{scale:3,backgroundColor:"#fff",useCORS:true,logging:false,onclone:d=>{const st=d.createElement("style");st.textContent=css;d.head.appendChild(st)}});
-  if(i)doc.addPage();doc.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297)}
- return doc.output("blob")}
 const PPTX_T="application/vnd.openxmlformats-officedocument.presentationml.presentation";
 function dlBlob(bl,fn){const a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 async function pickSave(fn,desc,mime,ext,prev){
@@ -573,18 +563,9 @@ $("#bPpt").onclick=async()=>{
  const b=$("#bPpt"),t=b.textContent,bn=baseName();let fp=null;
  try{fp=await pickSave(bn+".pptx","PowerPoint-Präsentation",PPTX_T,".pptx")}catch(e){return}
  b.disabled=true;b.textContent="Wird erstellt ...";
- const err=[];let pdf=null;
- try{const bl=await window.buildReferenzPptx(D);if(fp)await writeFh(fp,bl);else dlBlob(bl,bn+".pptx")}catch(e){err.push("PowerPoint: "+e.message)}
- try{pdf=await buildPdfBlob()}catch(e){err.push("PDF: "+e.message)}
- b.disabled=false;b.textContent=t;
- if(err.length){alert("Fehler beim Erstellen:\n"+err.join("\n"));return}
- if(!fp||!window.showSaveFilePicker){dlBlob(pdf,bn+".pdf");return}
- dlg('<h3>PowerPoint gespeichert</h3><div style="font-size:12px;margin:8px 0">Jetzt noch das PDF im selben Ordner speichern.</div><div class="wzb"><button type="button" id="pdfNo">Überspringen</button><span class="sp"></span><button type="button" class="pri" id="pdfGo">PDF speichern</button></div>');
- document.getElementById("pdfNo").onclick=()=>document.getElementById("dlg").close();
- document.getElementById("pdfGo").onclick=async()=>{
-  try{const f2=await pickSave(bn+".pdf","PDF-Dokument","application/pdf",".pdf",fp);if(f2)await writeFh(f2,pdf);else dlBlob(pdf,bn+".pdf")}
-  catch(e){if(!(e&&e.name==="AbortError"))alert("PDF konnte nicht gespeichert werden: "+e.message);return}
-  document.getElementById("dlg").close()}};
+ try{const bl=await window.buildReferenzPptx(D);if(fp)await writeFh(fp,bl);else dlBlob(bl,bn+".pptx")}
+ catch(e){alert("Fehler beim Erstellen der PowerPoint: "+e.message)}
+ b.disabled=false;b.textContent=t};
 $("#bPdf").onclick=()=>{const t=document.title;document.title=baseName();window.print();document.title=t};
 window.dlg_=$("#dlg");
 let currentCloudId=null,currentCloudUpdatedAt=null,dirty=false;
