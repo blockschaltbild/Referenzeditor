@@ -138,6 +138,14 @@
     solid.appendChild(clr);
   }
 
+  function setXfrm(shape, x, y, w, h) {
+    var xf = shape.getElementsByTagName("a:xfrm")[0];
+    if (!xf) return;
+    var off = xf.getElementsByTagName("a:off")[0], ext = xf.getElementsByTagName("a:ext")[0];
+    if (off) { off.setAttribute("x", String(Math.round(x))); off.setAttribute("y", String(Math.round(y))); }
+    if (ext) { ext.setAttribute("cx", String(Math.round(w))); if (h !== null) ext.setAttribute("cy", String(Math.round(h))); }
+  }
+
   function setText(shape, text, color) {
     var txBody = firstEl(shape, "txBody");
     if (!txBody) return;
@@ -428,10 +436,29 @@
     setText(a[3], str(D.veranstaltung), BLACK);
 
     var tiles = Array.isArray(D.tiles) ? D.tiles : [];
+    var vis = [];
     for (var i = 0; i < 8; i++) {
       var t = i < tiles.length && tiles[i] && typeof tiles[i] === "object" ? tiles[i] : {};
+      if (t.off) {
+        for (var q = 0; q < 3; q++) drop.push(a[7 + i * 3 + q]);
+        continue;
+      }
+      vis.push(i);
       if (str(t.l)) setText(a[8 + i * 3], str(t.l), null);
       setText(a[9 + i * 3], str(t.v), BLACK);
+    }
+    var grid = global.tileGrid ? global.tileGrid(vis.length) : null;
+    if (grid) {
+      for (var k = 0; k < vis.length; k++) {
+        var c = grid[k], base = 7 + vis[k] * 3;
+        var tw = (6480000 - (c.cols - 1) * 90000) / c.cols;
+        var tx = 540000 + c.col * (tw + 90000);
+        var ty = 5148000 + c.row * 702000;
+        var th = c.span * 612000 + (c.span - 1) * 90000;
+        setXfrm(a[base], tx, ty, tw, th);
+        setXfrm(a[base + 1], tx + 108000, ty + 93600, tw - 216000, null);
+        setXfrm(a[base + 2], tx + 108000, ty + 237600, tw - 216000, th - 324000);
+      }
     }
 
     setText(a[33], str(D.projekt), BLACK);
