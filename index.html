@@ -191,7 +191,7 @@ window.uiAlert=(t,o)=>uiMsg(t,o);window.uiConfirm=(t,o)=>uiMsg(t,Object.assign({
 <script src="pptx-export.js"></script>
 <script src="cloud.js"></script>
 <script>
-const APP_VERSION="1.1.0";
+const APP_VERSION="1.2.0";
 (function(){const v=document.getElementById("ver");v.textContent="Version "+APP_VERSION;
 if(!/^https?:/.test(location.protocol))return;
 fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VERSION="([^"]+)"/);if(m&&m[1]!==APP_VERSION){v.innerHTML="";const a=document.createElement("a");a.href="#";a.style.cssText="color:#F9D057;font-weight:700";a.textContent="Version "+APP_VERSION+" – neue Version "+m[1]+" verfügbar, hier neu laden";a.onclick=e=>{e.preventDefault();location.reload()};v.appendChild(a)}else if(m){v.textContent="Version "+APP_VERSION+" (aktuell)"}}).catch(()=>{})})();
@@ -222,6 +222,8 @@ function blank(){return{
  img:{bild1:null,bild2:null,extra:[]}
 }}
 let D=blank();
+window.tileGrid=function(n){if(n<1)return[];if(n===1)return[{col:0,cols:1,row:0,span:2}];const t=Math.ceil(n/2),b=n-t,o=[];for(let c=0;c<t;c++)o.push({col:c,cols:t,row:0,span:1});for(let c=0;c<b;c++)o.push({col:c,cols:b,row:1,span:1});return o};
+const visTiles=()=>D.tiles.map((t,i)=>i).filter(i=>!D.tiles[i].off);
 const LIM={projekt:520,ausgang:450,herausf:330,loesung:330};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -276,7 +278,7 @@ function renderForm(){
    ${fld("veranstaltung","Veranstaltung, Ort",{ph:"z. B. 100 Jahre Familienunternehmen Hehl, Loßburg"})}`);
  h+=sect("kacheln","3  Kacheln (Eckdaten)",
   `<div class="note">Bezeichnung der Kachel ist frei änderbar (z. B. HIGHLIGHT, STANDFLÄCHE). Wert kurz halten (max. ca. 38 Zeichen).</div>`+
-  D.tiles.map((t,i)=>`<div class="tile"><div class="row r2">${fld(`tiles.${i}.l`,"Bezeichnung")}${fld(`tiles.${i}.v`,"Wert",{ph:TILE_DEF[i][1],date:i===2})}</div></div>`).join(""));
+  D.tiles.map((t,i)=>`<div class="tile"><div class="row r2">${fld(`tiles.${i}.l`,"Bezeichnung")}${fld(`tiles.${i}.v`,"Wert",{ph:TILE_DEF[i][1],date:i===2})}</div><label style="display:flex;gap:8px;align-items:center;font-size:11px;color:var(--g2)"><input type="checkbox" data-p="tiles.${i}.off"${t.off?" checked":""}> Kachel ausblenden (die übrigen Kacheln füllen die Lücke)</label></div>`).join(""));
  h+=sect("projekt","4  Das Projekt und Leistungen der ICT",
   fld("projekt","Das Projekt",{area:1,rows:6,lim:LIM.projekt,h:"3–5 Sätze: Anlass, Rahmen, Besonderheiten, Ergebnis"})+
   fld("leistungen","Leistungen der ICT",{area:1,rows:5,h:"ein Punkt pro Zeile, max. 4 Zeilen"})+
@@ -311,7 +313,7 @@ function renderForm(){
 function isOpen(v){return !String(v||"").trim()||/\[/.test(v)}
 const SECFIELDS={
  kopf:()=>[D.nr,D.art,D.kunde,D.veranstaltung],
- kacheln:()=>D.tiles.map(t=>t.v),
+ kacheln:()=>D.tiles.filter(t=>!t.off).map(t=>t.v),
  projekt:()=>[D.projekt,D.leistungen,...D.bezug],
  bilder:()=>[D.img.bild1?"x":"",D.img.bild2?"x":""],
   seite2:()=>[D.ausgang,...D.tech.slice(0,3).flatMap(t=>[t.k,t.u,t.e])],
@@ -370,9 +372,9 @@ function page1(){
  h+=R(1.5,4.2,1.8,.1,"#4D49BC");
  h+=imgb(D.img.bild1,1.5,4.6,18,9.2,"Hauptbild 180 × 92 mm","bild1");
  h+=(D.bildquelle1.trim()?T("cap",1.5,13.9,18,.3,D.bildquelle1,"","","","bildquelle1"):"");
- const xs=[1.5,6.1,10.6,15.2],ys=[14.3,16.2];
- D.tiles.forEach((t,i)=>{const x=xs[i%4],y=ys[Math.floor(i/4)];
-  h+=R(x,y,4.3,1.7,"#F0EEF4")+T("tll",x+.3,y+.3,3.7,.3,t.l,"","",`tiles.${i}.l`)+T("tlv",x+.3,y+.7,3.7,.9,t.v,"["+TILE_DEF[i][1]+"]","","",`tiles.${i}.v`);});
+ {const vi=visTiles(),g=tileGrid(vi.length),W=18.1,gp=.3,H=1.7,y0=14.3,gy=.2;
+ vi.forEach((i,k)=>{const t=D.tiles[i],c=g[k],w=(W-(c.cols-1)*gp)/c.cols,x=1.5+c.col*(w+gp),y=y0+c.row*(H+gy),hh=c.span*H+(c.span-1)*gy;
+  h+=R(x,y,w,hh,"#F0EEF4")+T("tll",x+.3,y+.3,w-.6,.3,t.l,"","",`tiles.${i}.l`)+T("tlv",x+.3,y+.7,w-.6,hh-.8,t.v,"["+TILE_DEF[i][1]+"]","","",`tiles.${i}.v`);});}
  h+=R(1.5,18.6,.1,.4,"#4D49BC")+T("hd",1.8,18.6,10.9,.5,HH("projekt"),"","","h.projekt")+`<div class="t bd${D.projekt.trim()?"":" ph"} hk" data-cv="projekt" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:19.2cm;width:11.2cm;height:3.2cm">${esc(D.projekt.trim()?D.projekt:"[Kurzbeschreibung in 3–5 Sätzen]")}</div>`;
  h+=R(1.5,22.6,.1,.4,"#4D49BC")+T("hd",1.8,22.6,10.9,.5,HH("leistungen"),"","","h.leistungen");
  const ls=D.leistungen.split("\n").filter(x=>x.trim()).slice(0,4);
@@ -498,7 +500,7 @@ function baseName(){return `Referenz_${D.nr||"XX"}_${slug(D.kunde)||"Kunde"}_${s
 function openPoints(){
  const out=[];const add=(sec,l,v)=>{if(isOpen(v))out.push(`${sec}: ${l}`)};
  add("Kopf","Referenz-Nr.",D.nr);add("Kopf","Veranstaltungsart",D.art);add("Kopf","Kunde",D.kunde);add("Kopf","Veranstaltung, Ort",D.veranstaltung);
- D.tiles.forEach(t=>add("Kachel",t.l,t.v));
+ D.tiles.forEach(t=>{if(!t.off)add("Kachel",t.l,t.v)});
  add("Projekt","Projekttext",D.projekt);add("Projekt","Leistungen der ICT",D.leistungen);D.bezug.forEach((b,i)=>add("Bezug zur Ausschreibung",String(i+1),b));
  if(!D.img.bild1)out.push("Bilder: Hauptbild fehlt");if(!D.img.bild2)out.push("Bilder: Zweitbild fehlt");add("Bilder","Quelle Hauptbild",D.bildquelle1);add("Bilder","Quelle Zweitbild",D.bildquelle2);
  if(!D.links.length)out.push("Links: keine Quelle angegeben");
@@ -826,7 +828,7 @@ function wizFields(id){
   if(o(D.kunde))h+=fld("kunde","Kunde / Auftraggeber",{ph:"z. B. ARBURG GmbH + Co KG"});
   if(o(D.veranstaltung))h+=fld("veranstaltung","Veranstaltung, Ort",{ph:"z. B. 100 Jahre Familienunternehmen Hehl, Loßburg"});
  }
- if(id==="kacheln")D.tiles.forEach((t,i)=>{if(o(t.v))h+=fld(`tiles.${i}.v`,t.l,{ph:TILE_DEF[i][1],date:i===2})});
+ if(id==="kacheln")D.tiles.forEach((t,i)=>{if(!t.off&&o(t.v))h+=fld(`tiles.${i}.v`,t.l,{ph:TILE_DEF[i][1],date:i===2})});
  if(id==="projekt"){
   if(o(D.projekt))h+=fld("projekt","Das Projekt",{area:1,rows:6,lim:LIM.projekt,h:"3-5 Sätze: Anlass, Rahmen, Besonderheiten, Ergebnis"});
   if(o(D.leistungen))h+=fld("leistungen","Leistungen der ICT",{area:1,rows:5,h:"ein Punkt pro Zeile, höchstens 4 Zeilen"});
