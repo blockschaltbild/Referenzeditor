@@ -171,8 +171,19 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
 <dialog id="ask"><form method="dialog" class="in" id="askf"></form></dialog>
 <dialog id="cal"><form method="dialog" class="in" id="calf"></form></dialog>
 <dialog id="wiz"><div class="in" id="wizin"></div></dialog>
+<dialog id="msg" style="width:min(440px,92vw)"><form method="dialog" class="in" id="msgf"></form></dialog>
 <dialog id="dlg"><div class="in" id="dlgin"></div></dialog>
 
+<script>
+function uiMsg(text,o){o=o||{};return new Promise(res=>{const d=document.getElementById("msg"),f=document.getElementById("msgf");
+f.innerHTML='<h3></h3><div id="msgt" style="white-space:pre-line;line-height:1.5;font-size:13px"></div><div class="wzb" style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="msgn"></button><button type="submit" class="pri" id="msgo"></button></div>';
+f.querySelector("h3").textContent=o.title||(o.confirm?"Bitte bestätigen":"Hinweis");f.querySelector("#msgt").textContent=text;
+const n=f.querySelector("#msgn"),ok=f.querySelector("#msgo");ok.textContent=o.ok||(o.confirm?"Ja":"OK");
+if(o.confirm){n.textContent=o.cancel||"Abbrechen";if(o.danger)ok.classList.add("del")}else n.style.display="none";
+let r=false;ok.onclick=()=>{r=true};n.onclick=()=>{d.close()};
+d.onclose=()=>{d.onclose=null;res(r)};d.oncancel=()=>{r=false};d.showModal();ok.focus()})}
+window.uiAlert=(t,o)=>uiMsg(t,o);window.uiConfirm=(t,o)=>uiMsg(t,Object.assign({confirm:true},o));
+</script>
 <script src="vendor/supabase.js"></script>
 <script src="config.js"></script>
 <script src="vendor/jszip.min.js"></script>
@@ -467,7 +478,7 @@ function shrink(file){return new Promise((res,rej)=>{
   res({data:c.toDataURL("image/jpeg",.85),name:file.name,modus:"fuellen",ow:im.width,oh:im.height,w:c.width,h:c.height})};im.src=fr.result};fr.readAsDataURL(file)})}
 async function addFiles(k,files){
  const fs=[...files].filter(f=>f.type.startsWith("image/"));if(!fs.length)return;
- for(const f of fs){try{const r=await shrink(f);if(k==="extra")D.img.extra.push({...r,beschr:""});else D.img[k]=r}catch(e){alert("Bild konnte nicht gelesen werden: "+f.name)}}
+ for(const f of fs){try{const r=await shrink(f);if(k==="extra")D.img.extra.push({...r,beschr:""});else D.img[k]=r}catch(e){uiAlert("Bild konnte nicht gelesen werden: "+f.name)}}
  renderForm();changed();if(WZ.on)wizRender();if(imgRedraw)imgRedraw();
 }
 let imgRedraw=null;
@@ -589,15 +600,15 @@ $("#bPpt").onclick=async()=>{
  try{fp=await pickSave(bn+".pptx","PowerPoint-Präsentation",PPTX_T,".pptx")}catch(e){return}
  b.disabled=true;b.textContent="Wird erstellt ...";
  try{const bl=await window.buildReferenzPptx(D);if(fp)await writeFh(fp,bl);else dlBlob(bl,bn+".pptx")}
- catch(e){alert("Fehler beim Erstellen der PowerPoint: "+e.message)}
+ catch(e){uiAlert("Fehler beim Erstellen der PowerPoint: "+e.message)}
  b.disabled=false;b.textContent=t};
 $("#bPdf").onclick=()=>{const t=document.title;document.title=baseName();window.print();document.title=t};
 window.dlg_=$("#dlg");
 let currentCloudId=null,currentCloudUpdatedAt=null,dirty=false,RO=false,roOwner="";
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
 async function cloudSave(){
- if(RO){alert("Diese Referenz gehört "+(roOwner||"einem anderen Nutzer")+" und ist nur zur Ansicht freigegeben. Speichern ist nicht möglich.");return}
- if(!Cloud.active()){alert("Bitte zuerst anmelden, um in der Datenbank zu speichern.");return}
+ if(RO){uiAlert("Diese Referenz gehört "+(roOwner||"einem anderen Nutzer")+" und ist nur zur Ansicht freigegeben. Speichern ist nicht möglich.");return}
+ if(!Cloud.active()){uiAlert("Bitte zuerst anmelden, um in der Datenbank zu speichern.");return}
  const b=$("#bSave"),t=b.textContent;b.disabled=true;b.textContent="Speichern ...";
  try{
   const r=await Cloud.save(D,{id:currentCloudId});
@@ -605,7 +616,7 @@ async function cloudSave(){
   if(r&&r.error)throw new Error(r.error);
   currentCloudId=r.id;currentCloudUpdatedAt=r.updated_at;dirty=false;renderSaveState();
   b.textContent="Gespeichert";setTimeout(()=>{if($("#bSave").textContent==="Gespeichert")$("#bSave").textContent=t},1600);
- }catch(e){alert("Speichern fehlgeschlagen: "+e.message)}
+ }catch(e){uiAlert("Speichern fehlgeschlagen: "+e.message)}
  finally{b.disabled=false;if(b.textContent==="Speichern ...")b.textContent=t}
 }
 function loadProject(p){D=Object.assign(blank(),p);D.h=Object.assign(blank().h,p.h);D.img=Object.assign({bild1:null,bild2:null,extra:[]},p.img);renderForm();changed()}
@@ -624,7 +635,7 @@ function cloudRows(filter){
  return match.map(v=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid var(--g5)"><div style="flex:1 1 auto;min-width:0"><div style="font-weight:600;font-size:.95rem;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.title||"(ohne Titel)")+'</div><div style="font-size:.8rem;color:var(--g2)">'+esc(v.kunde||"")+(v.kunde&&v.veranstaltung?" – ":"")+esc(v.veranstaltung||"")+'</div><div style="font-size:.78rem;color:var(--g3)">'+esc(v.created_by_email||"")+' · zuletzt geändert '+fmtCloudDate(v.updated_at)+'</div></div><div style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="sm" data-open="'+v.id+'">Öffnen</button>'+(v.owner?'<button type="button" class="sm del" data-del="'+v.id+'" data-title="'+esc(v.title||"")+'">Löschen</button>':"")+'</div></div>').join("");
 }
 async function openCloudList(){
- if(!Cloud.active()){alert("Bitte zuerst anmelden, um aus der Datenbank zu öffnen.");return}
+ if(!Cloud.active()){uiAlert("Bitte zuerst anmelden, um aus der Datenbank zu öffnen.");return}
  dlg('<h3>Aus Datenbank öffnen</h3><div style="font-size:11px;color:var(--g2)">Gemeinsame Referenzliste aller aktiven Nutzer. „Löschen" ist nur bei eigenen Referenzen möglich; ein Sicherungsstand bleibt erhalten.</div><input type="text" id="cloudF" placeholder="Suchen (Titel, Kunde, Veranstaltung, E-Mail) ..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--g4);border-radius:8px;font-size:.9rem;margin:10px 0 6px"><div id="cloudL" style="max-height:52vh;overflow:auto;border-top:1px solid var(--g5)"></div><div class="wzb"><span class="sp"></span><button class="pri" id="cloudX">Schließen</button></div>');
  document.getElementById("cloudX").onclick=()=>document.getElementById("dlg").close();
  const f=document.getElementById("cloudF"),list=document.getElementById("cloudL");
@@ -637,8 +648,8 @@ async function openCloudList(){
 async function cloudOpen(id){
  let r;
  try{r=await Cloud.load(id);if(r.error)throw new Error(r.error)}
- catch(e){alert("Konnte Referenz nicht laden: "+e.message);return}
- if(dirty&&!confirm("Ungespeicherte Änderungen gehen verloren. Referenz trotzdem öffnen?"))return;
+ catch(e){uiAlert("Konnte Referenz nicht laden: "+e.message);return}
+ if(dirty&&!await uiConfirm("Ungespeicherte Änderungen gehen verloren. Referenz trotzdem öffnen?"))return;
  setRO(false);
  loadProject(r.data);
  currentCloudId=id;currentCloudUpdatedAt=r.updated_at;dirty=false;
@@ -647,10 +658,10 @@ async function cloudOpen(id){
 }
 async function cloudRemove(id,title){
  const cur=cloudItems.find(v=>v.id===id),grp=cur?cloudItems.filter(v=>cloudKey(v)===cloudKey(cur)):[{id:id}];
- if(!confirm("Referenz \u201e"+title+"\u201c wirklich löschen?"+(grp.length>1?" Alle "+grp.length+" gespeicherten Stände dieses Projekts werden entfernt.":"")+" Der Eintrag verschwindet aus der gemeinsamen Liste; ein Sicherungsstand bleibt automatisch erhalten."))return;
+ if(!await uiConfirm("Referenz \u201e"+title+"\u201c wirklich löschen?"+(grp.length>1?" Alle "+grp.length+" gespeicherten Stände dieses Projekts werden entfernt.":"")+" Der Eintrag verschwindet aus der gemeinsamen Liste; ein Sicherungsstand bleibt automatisch erhalten."))return;
  const fail=[];
  for(const g of grp){try{const r=await Cloud.remove(g.id);if(r.error)throw new Error(r.error)}catch(e){fail.push(e.message)}}
- if(fail.length)alert("Nicht alle Stände konnten gelöscht werden ("+fail.length+" von "+grp.length+"): "+fail[0]);
+ if(fail.length)uiAlert("Nicht alle Stände konnten gelöscht werden ("+fail.length+" von "+grp.length+"): "+fail[0]);
  try{const r=await Cloud.list();if(r.error)throw new Error(r.error);cloudItems=r.data||[]}
  catch(e){return}
  const list=document.getElementById("cloudL"),f=document.getElementById("cloudF");
@@ -658,8 +669,8 @@ async function cloudRemove(id,title){
 }
 $("#bSave").onclick=cloudSave;
 $("#bLoad").onclick=openCloudList;
-$("#bNeu").onclick=()=>{if(dirty&&!confirm("Ungespeicherte Änderungen gehen verloren. Trotzdem mit einem leeren Blatt neu beginnen?"))return;if(confirm("Alle Eingaben löschen und neu beginnen?")){D=blank();currentCloudId=null;currentCloudUpdatedAt=null;setRO(false);renderForm();changed()}};
-$("#bBsp").onclick=()=>{if(!confirm("Beispiel (ARBURG, 100 Jahre) laden? Aktuelle Eingaben werden ersetzt."))return;
+$("#bNeu").onclick=async()=>{if(dirty&&!await uiConfirm("Ungespeicherte Änderungen gehen verloren. Trotzdem mit einem leeren Blatt neu beginnen?"))return;if(await uiConfirm("Alle Eingaben löschen und neu beginnen?")){D=blank();currentCloudId=null;currentCloudUpdatedAt=null;setRO(false);renderForm();changed()}};
+$("#bBsp").onclick=async()=>{if(!await uiConfirm("Beispiel (ARBURG, 100 Jahre) laden? Aktuelle Eingaben werden ersetzt."))return;
  D=blank();currentCloudId=null;currentCloudUpdatedAt=null;setRO(false);Object.assign(D,{nr:"06",art:"FIRMENJUBILÄUM / GALA-EVENT",kunde:"ARBURG GmbH + Co KG",veranstaltung:"100 Jahre Familienunternehmen Hehl, Loßburg",
  projekt:"Zum 100-jährigen Bestehen des Familienunternehmens Hehl feierte ARBURG im Februar 2023 in Loßburg an drei Abenden mit 1.200 Gästen aus 32 Nationen. Veranstaltungsort war der „Arburg Cube“, eine eigens errichtete Leichtbauhalle. Auf zwei LED-Wänden von je 45 × 4,5 m wurde die Firmengeschichte als Zeitreise inszeniert.",
  leistungen:"[Technische Planung der Medientechnik – bitte bestätigen]\n[Lieferung, Aufbau und Inbetriebnahme: zwei LED-Wände je 45 × 4,5 m]\n[Content-Zuspielung für Zeitreise und Produktpremiere]\n[Technische Betreuung der drei Abendevents, Abbau]",
