@@ -463,10 +463,8 @@ function openPoints(){
  return out;
 }
 const MON=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
-function fmtRange(a,b){if(!a)return"";const A=a.getDate()+".",y=a.getFullYear();if(!b||+a===+b)return a.getDate()+". "+MON[a.getMonth()]+" "+y;
- if(a.getFullYear()!==b.getFullYear())return a.getDate()+". "+MON[a.getMonth()]+" "+y+" – "+b.getDate()+". "+MON[b.getMonth()]+" "+b.getFullYear();
- if(a.getMonth()!==b.getMonth())return a.getDate()+". "+MON[a.getMonth()]+" – "+b.getDate()+". "+MON[b.getMonth()]+" "+y;
- return a.getDate()+".–"+b.getDate()+". "+MON[a.getMonth()]+" "+y}
+function fmtD(x){return String(x.getDate()).padStart(2,"0")+"."+String(x.getMonth()+1).padStart(2,"0")+"."+x.getFullYear()}
+function fmtRange(a,b){if(!a)return"";if(!b||+a===+b)return fmtD(a);return fmtD(a)+" – "+fmtD(b)}
 function pickDate(cb,op,cur){const d=document.getElementById("cal"),f=document.getElementById("calf");const now=new Date();now.setHours(0,0,0,0);
  const AT=!!(op&&op.at);let mode=AT?"at":"range",nat=(String(cur||"").match(/^(\d+) AT$/)||[])[1]||"",a=null,b=null,vm=new Date(now.getFullYear(),now.getMonth(),1),ok=false;
  const same=(x,y)=>x&&y&&+x===+y;
@@ -478,7 +476,7 @@ function pickDate(cb,op,cur){const d=document.getElementById("cal"),f=document.g
   const atOk=+nat>0,res=mode==="at"?(atOk?nat+" AT":""):mode==="day"?fmtRange(a):(a&&!b?fmtRange(a)+" – bitte Enddatum wählen":fmtRange(a,b));
   f.innerHTML=`<h3>Datum auswählen</h3>${op&&op.def?`<div class="defb"><b>Erwartete Angaben</b><div>${esc(op.def)}</div></div>`:""}<div class="cal-m">${AT?`<button type="button" data-m="at" class="${mode==="at"?"on":""}">Arbeitstage (AT)</button>`:""}<button type="button" data-m="day" class="${mode==="day"?"on":""}">Tagesveranstaltung</button><button type="button" data-m="range" class="${mode==="range"?"on":""}">${AT?"Zeitraum":"Zeitraum (mehrere Tage)"}</button></div>
   <div class="hint">${mode==="at"?"Anzahl der Arbeitstage eintragen, z. B. 3.":mode==="day"?"Klicken Sie auf den Tag der Veranstaltung.":"Klicken Sie zuerst auf den Starttag, danach auf den Endtag."}</div>
-  ${mode==="at"?`<div class="cal-at"><input type="number" id="atn" min="1" max="99" step="1" value="${esc(nat)}" placeholder="0"><span>AT</span></div>`:`<div class="cal-h"><button type="button" data-nav="-1">&lsaquo;</button><span>${MON[vm.getMonth()]} ${vm.getFullYear()}</span><button type="button" data-nav="1">&rsaquo;</button></div>
+  ${mode==="at"?`<div class="cal-at"><input type="number" id="atn" min="1" max="9999" step="1" value="${esc(nat)}" placeholder="0"><span>AT</span></div>`:`<div class="cal-h"><button type="button" data-nav="-1">&lsaquo;</button><span>${MON[vm.getMonth()]} ${vm.getFullYear()}</span><button type="button" data-nav="1">&rsaquo;</button></div>
   <div class="cal-g">${g}</div>`}<div class="cal-r">${res||"Noch nichts ausgewählt"}</div>
   <div class="wzb"><button type="button" class="del" data-c="x">Abbrechen</button><span class="sp"></span><button type="submit" class="pri"${(mode==="at"?atOk:a&&(mode==="day"||b))?"":" disabled"}>Übernehmen</button></div>`}
  f.onclick=e=>{const t=e.target.closest("button");if(!t)return;
