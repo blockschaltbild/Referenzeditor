@@ -122,16 +122,17 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
  .page .ph,.page .imgbox .ph{visibility:hidden}
  .page .imgbox:not(:has(img)){border:0!important;background:none}
  .page .ovf{outline:0}
- .page:last-child{page-break-after:auto}
  .page .addrow{display:none}
  .page .td.rh{outline:0;background:none}
  .page .hk:hover{outline:0;background:none}
  html,body{background:#fff;height:auto}
  #app{display:block;height:auto}header.bar,#form,.zoomctl,#fcb{display:none!important}
  #pv{padding:0;overflow:visible;background:#fff}
- .sheetwrap{display:block}
- .page{box-shadow:none;page-break-after:always;zoom:1!important}
- @page{size:A4;margin:0}
+ html,body{width:29.7cm;height:21cm;overflow:hidden}
+ #pv{width:29.7cm;height:21cm;overflow:hidden}
+ .sheetwrap{display:flex!important;flex-wrap:nowrap!important;gap:0!important;justify-content:flex-start!important;align-items:flex-start;width:29.7cm;height:21cm;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
+ .page{box-shadow:none;page-break-after:avoid!important;zoom:.7071!important;flex:none}
+ @page{size:A4 landscape;margin:0}
 }
 </style>
 </head>
