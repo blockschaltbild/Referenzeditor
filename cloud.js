@@ -282,9 +282,14 @@
         const gate = await requireActive();
         if (gate) return gate;
         try {
-            const { data, error } = await client.rpc('list_reference_projects');
+            const { data, error } = await client
+                .from('reference_projects')
+                .select('id,nr,kunde,veranstaltung,art,title,created_by,created_by_email,updated_by_email,created_at,updated_at')
+                .is('deleted_at', null)
+                .order('updated_at', { ascending: false });
             if (error) throw error;
-            return { data: data || [] };
+            const uid = state.user && state.user.id;
+            return { data: (data || []).map(r => Object.assign({}, r, { owner: r.created_by === uid })) };
         } catch (err) {
             return { error: dbErr(err) };
         }
