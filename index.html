@@ -27,6 +27,7 @@ button.ic:hover{background:rgba(255,255,255,.3)}
 button.pri{background:var(--blue);color:#fff}button.pri:hover{background:var(--l1)}
 button.sm{padding:4px 8px;font-size:11px}
 button.del{background:var(--g6);color:var(--g1)}
+#app.fc{grid-template-columns:0 1fr}#app.fc #form{display:none}
 #form{overflow:auto;padding:12px 14px 60px;background:#fff;border-right:1px solid var(--g5)}
 #pv{overflow:auto;padding:16px;background:var(--g5)}
 details{border:1px solid var(--g5);border-radius:8px;margin:0 0 10px;background:#fff}
@@ -151,7 +152,7 @@ ul.op{margin:0;padding-left:18px;font-size:12px;max-height:50vh;overflow:auto}ul
 </header>
 <div id="form"></div>
 <div id="pv">
- <div class="zoomctl"><button class="sm" id="zm">–</button><span id="zv"></span><button class="sm" id="zp">+</button><button class="sm" id="zf">Einpassen</button><span id="ovinfo"></span><span style="color:var(--blue);font-weight:600">Tipp: Überschriften in der Vorschau anklicken zum Umbenennen</span></div>
+ <div class="zoomctl"><button class="sm" id="fcb" title="Eingabebereich links ein- oder ausblenden">&laquo; Eingabe ausblenden</button><button class="sm" id="zm">–</button><span id="zv"></span><button class="sm" id="zp">+</button><button class="sm" id="zf">Einpassen</button><span id="ovinfo"></span><span style="color:var(--blue);font-weight:600">Tipp: Überschriften in der Vorschau anklicken zum Umbenennen</span></div>
  <div class="sheetwrap" id="sheets"></div>
 </div>
 </div>
@@ -390,8 +391,11 @@ function applyZoom(){if(zoom===null)zoom=fitZoom();document.querySelectorAll(".p
 $("#zm").onclick=()=>{zoom=Math.max(.3,zoom-.1);applyZoom()};
 $("#zp").onclick=()=>{zoom=Math.min(1.6,zoom+.1);applyZoom()};
 $("#zf").onclick=()=>{zoom=fitZoom();applyZoom()};
+function setFc(on){$("#app").classList.toggle("fc",on);$("#fcb").innerHTML=on?"&raquo; Eingabe einblenden":"&laquo; Eingabe ausblenden";try{localStorage.setItem("ref_fc",on?"1":"0")}catch(e){}if(zoomAuto){zoom=fitZoom();applyZoom()}}
+$("#fcb").onclick=()=>setFc(!$("#app").classList.contains("fc"));
 window.addEventListener("resize",()=>{if(zoomAuto){zoom=fitZoom();applyZoom()}});
 let zoomAuto=true;["zm","zp"].forEach(i=>$("#"+i).addEventListener("click",()=>zoomAuto=false));$("#zf").addEventListener("click",()=>zoomAuto=true);
+try{if(localStorage.getItem("ref_fc")==="1")setFc(true)}catch(e){}
 
 let saveT;
 function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem("ict_ref_editor",JSON.stringify(D))}catch(e){$("#ovinfo").insertAdjacentHTML("beforeend"," <b style='color:#c0392b'>Autospeichern voll – bitte in der Datenbank speichern</b>")}},400)}
