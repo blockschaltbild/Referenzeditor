@@ -191,7 +191,7 @@ window.uiAlert=(t,o)=>uiMsg(t,o);window.uiConfirm=(t,o)=>uiMsg(t,Object.assign({
 <script src="pptx-export.js"></script>
 <script src="cloud.js"></script>
 <script>
-const APP_VERSION="1.0.0";
+const APP_VERSION="1.1.0";
 (function(){const v=document.getElementById("ver");v.textContent="Version "+APP_VERSION;
 if(!/^https?:/.test(location.protocol))return;
 fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VERSION="([^"]+)"/);if(m&&m[1]!==APP_VERSION){v.innerHTML="";const a=document.createElement("a");a.href="#";a.style.cssText="color:#F9D057;font-weight:700";a.textContent="Version "+APP_VERSION+" – neue Version "+m[1]+" verfügbar, hier neu laden";a.onclick=e=>{e.preventDefault();location.reload()};v.appendChild(a)}else if(m){v.textContent="Version "+APP_VERSION+" (aktuell)"}}).catch(()=>{})})();
@@ -634,14 +634,16 @@ function cloudLatest(items){
   const k=cloudKey(v);
   if(seen.has(k))return false;seen.add(k);return true})}
 function cloudRows(filter){
- const q=(filter||"").toLowerCase();
- const match=cloudLatest(cloudItems).filter(v=>!q||(v.title||"").toLowerCase().includes(q)||(v.kunde||"").toLowerCase().includes(q)||(v.veranstaltung||"").toLowerCase().includes(q)||(v.created_by_email||"").toLowerCase().includes(q));
+ const q=filter||"";
+ const sn=x=>String(x||"").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ß/g,"ss"),terms=sn(q).split(/\s+/).filter(Boolean);
+ const idx=v=>v._sx||(v._sx=sn([v.nr,v.title,v.veranstaltung,v.art,v.kunde,v.created_by_email,(Array.isArray(v.tiles)?v.tiles.filter(t=>t&&/^ORT/i.test(t.l||"")).map(t=>t.v):[]).join(" "),(Array.isArray(v.tech)?v.tech.map(t=>t&&[t.k,t.u,t.e].join(" ")):[]).join(" ")].join(" ")));
+ const match=cloudLatest(cloudItems).filter(v=>terms.every(t=>idx(v).includes(t)));
  if(!match.length)return '<div class="note" style="margin:10px">Keine passenden Referenzen gefunden.</div>';
  return match.map(v=>'<div style="display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid var(--g5)"><div style="flex:1 1 auto;min-width:0"><div style="font-weight:600;font-size:.95rem;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.title||"(ohne Titel)")+'</div><div style="font-size:.8rem;color:var(--g2)">'+esc(v.kunde||"")+(v.kunde&&v.veranstaltung?" – ":"")+esc(v.veranstaltung||"")+'</div><div style="font-size:.78rem;color:var(--g3)">'+esc(v.created_by_email||"")+' · zuletzt geändert '+fmtCloudDate(v.updated_at)+'</div></div><div style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="sm" data-open="'+v.id+'">Öffnen</button>'+(v.owner?'<button type="button" class="sm del" data-del="'+v.id+'" data-title="'+esc(v.title||"")+'">Löschen</button>':"")+'</div></div>').join("");
 }
 async function openCloudList(){
  if(!Cloud.active()){uiAlert("Bitte zuerst anmelden, um aus der Datenbank zu öffnen.");return}
- dlg('<h3>Aus Datenbank öffnen</h3><div style="font-size:11px;color:var(--g2)">Gemeinsame Referenzliste aller aktiven Nutzer. „Löschen" ist nur bei eigenen Referenzen möglich; ein Sicherungsstand bleibt erhalten.</div><input type="text" id="cloudF" placeholder="Suchen (Titel, Kunde, Veranstaltung, E-Mail) ..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--g4);border-radius:8px;font-size:.9rem;margin:10px 0 6px"><div id="cloudL" style="max-height:52vh;overflow:auto;border-top:1px solid var(--g5)"></div><div class="wzb"><span class="sp"></span><button class="pri" id="cloudX">Schließen</button></div>');
+ dlg('<h3>Aus Datenbank öffnen</h3><div style="font-size:11px;color:var(--g2)">Gemeinsame Referenzliste aller aktiven Nutzer. „Löschen" ist nur bei eigenen Referenzen möglich; ein Sicherungsstand bleibt erhalten.</div><input type="text" id="cloudF" placeholder="Suchen (Projektnr., Name, Art, Kunde, Ort, Komponenten) ..." style="width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--g4);border-radius:8px;font-size:.9rem;margin:10px 0 6px"><div id="cloudL" style="max-height:52vh;overflow:auto;border-top:1px solid var(--g5)"></div><div class="wzb"><span class="sp"></span><button class="pri" id="cloudX">Schließen</button></div>');
  document.getElementById("cloudX").onclick=()=>document.getElementById("dlg").close();
  const f=document.getElementById("cloudF"),list=document.getElementById("cloudL");
  list.onclick=e=>{const ob=e.target.closest("[data-open]");if(ob){cloudOpen(ob.dataset.open);return}const db=e.target.closest("[data-del]");if(db){cloudRemove(db.dataset.del,db.dataset.title);return}if(e.target.closest("[data-cl]")){document.getElementById("dlg").close()}};
