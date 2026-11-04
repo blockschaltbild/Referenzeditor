@@ -353,8 +353,7 @@
                     .maybeSingle();
                 if (error) throw error;
                 if (!data) {
-                    state.loadedUpdatedAt = null;
-                    return save(D, {});
+                    return { error: 'Diese Referenz gehört einem anderen Nutzer und kann nur von ihm geändert werden. Es wurde nichts gespeichert.' };
                 }
                 state.loadedUpdatedAt = data.updated_at;
                 return { id: data.id, updated_at: data.updated_at };
