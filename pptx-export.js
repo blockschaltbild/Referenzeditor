@@ -492,7 +492,8 @@
       setText(b[60], footer, null);
     }
 
-    var HD = Object.assign({}, D.hide && typeof D.hide === "object" ? D.hide : {}, { bilder: false });
+    var HD = global.effHide ? global.effHide(D.hide) : Object.assign({}, D.hide && typeof D.hide === "object" ? D.hide : {}, { bilder: false, apict: true });
+    var ictAp = !HD.apict;
     var LY = global.refLayout ? global.refLayout(HD) : { p1: {}, p2: {} };
     var CM = 360000;
     function grp(arr, from, to, hidden, dy) {
@@ -514,7 +515,7 @@
     grp(b, 11, 28, !!HD.ablauf, LY.p2.ab);
     grp(b, 29, 34, !!HD.hl, LY.p2.hl);
     grp(b, 35, 48, !!HD.partner, LY.p2.pa);
-    grp(b, 49, 58, !!HD.ap, LY.p2.ap);
+    grp(b, 49, 58, !!(HD.ap && HD.apict), LY.p2.ap);
 
     var img = D.img && typeof D.img === "object" ? D.img : {};
     var q1 = str(D.bildquelle1);
@@ -648,7 +649,9 @@
       setText(b[39 + i * 3], str(pp.f), BLACK);
     }
 
-    var ap = D.ap && typeof D.ap === "object" ? D.ap : {};
+    var apSrc = ictAp ? D.apict : D.ap;
+    var ap = apSrc && typeof apSrc === "object" ? apSrc : {};
+    if (ictAp) setText(b[50], str(H.apict) || "ANSPRECHPARTNER ICT", null);
     var apIdx = [["firma", 52], ["name", 54], ["funktion", 56], ["kontakt", 58]];
     for (i = 0; i < apIdx.length; i++) setText(b[apIdx[i][1]], str(ap[apIdx[i][0]]), BLACK);
 
