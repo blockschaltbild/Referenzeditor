@@ -492,7 +492,7 @@
       setText(b[60], footer, null);
     }
 
-    var HD = D.hide && typeof D.hide === "object" ? D.hide : {};
+    var HD = Object.assign({}, D.hide && typeof D.hide === "object" ? D.hide : {}, { bilder: false });
     var LY = global.refLayout ? global.refLayout(HD) : { p1: {}, p2: {} };
     var CM = 360000;
     function grp(arr, from, to, hidden, dy) {
@@ -513,7 +513,8 @@
     grp(b, 5, 10, !!HD.seite2, LY.p2.s2);
     grp(b, 11, 28, !!HD.ablauf, LY.p2.ab);
     grp(b, 29, 34, !!HD.hl, LY.p2.hl);
-    grp(b, 35, 58, !!HD.partner, LY.p2.pa);
+    grp(b, 35, 48, !!HD.partner, LY.p2.pa);
+    grp(b, 49, 58, !!HD.ap, LY.p2.ap);
 
     var img = D.img && typeof D.img === "object" ? D.img : {};
     var q1 = str(D.bildquelle1);
