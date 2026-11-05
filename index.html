@@ -195,7 +195,7 @@ window.uiAlert=(t,o)=>uiMsg(t,o);window.uiConfirm=(t,o)=>uiMsg(t,Object.assign({
 <script src="pptx-export.js"></script>
 <script src="cloud.js"></script>
 <script>
-const APP_VERSION="1.3.0";
+const APP_VERSION="1.4.0";
 (function(){const v=document.getElementById("ver");v.textContent="Version "+APP_VERSION;
 if(!/^https?:/.test(location.protocol))return;
 fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VERSION="([^"]+)"/);if(m&&m[1]!==APP_VERSION){v.innerHTML="";const a=document.createElement("a");a.href="#";a.style.cssText="color:#F9D057;font-weight:700";a.textContent="Version "+APP_VERSION+" – neue Version "+m[1]+" verfügbar, hier neu laden";a.onclick=e=>{e.preventDefault();location.reload()};v.appendChild(a)}else if(m){v.textContent="Version "+APP_VERSION+" (aktuell)"}}).catch(()=>{})})();
@@ -227,16 +227,17 @@ function blank(){return{
 }}
 let D=blank();
 window.tileGrid=function(n){if(n<1)return[];if(n===1)return[{col:0,cols:1,row:0,span:2}];const t=Math.ceil(n/2),b=n-t,o=[];for(let c=0;c<t;c++)o.push({col:c,cols:t,row:0,span:1});for(let c=0;c<b;c++)o.push({col:c,cols:b,row:1,span:1});return o};
-window.refLayout=function(hd){hd=hd||{};const a={},b={};let c=4.6;
+window.refLayout=function(hd){hd=Object.assign({},hd,{bilder:0});const a={},b={};let c=4.6;
 if(!hd.bilder){a.bild=0;c+=9.7}
 if(!hd.kacheln){a.kach=c-14.3;c+=4.3}
 if(!hd.projekt){a.proj=c-18.6;c+=7.3;a.bezug=c-25.9;c+=2.1}
 c=5;if(!hd.seite2){b.s2=c-5;c+=8.4}
 if(!hd.ablauf){b.ab=c-13.4;c+=4.2}
 if(!hd.hl){b.hl=c-17.6;c+=3}
-if(!hd.partner){b.pa=c-20.6;c+=7.2}
+if(!hd.partner){b.pa=c-20.6;c+=4.1}
+if(!hd.ap){b.ap=c-24.7;c+=3.1}
 return{p1:a,p2:b}};
-const HIDEABLE=["kacheln","projekt","bilder","seite2","ablauf","hl","partner"];
+const HIDEABLE=["kacheln","projekt","seite2","ablauf","hl","partner","ap"];
 const visTiles=()=>D.tiles.map((t,i)=>i).filter(i=>!D.tiles[i].off);
 const LIM={projekt:520,ausgang:450,herausf:330,loesung:330};
 const $=s=>document.querySelector(s);
@@ -315,8 +316,9 @@ function renderForm(){
   D.phasen.map((p,i)=>`<div class="tile">${fld(`phasen.${i}.t`,"Phase")}<div class="row r2">${fld(`phasen.${i}.z`,"Zeitraum",{ph:"z. B. 3 AT oder Datum",date:1})}${fld(`phasen.${i}.x`,"Inhalt",{ph:PH_DEF[i][1]})}</div></div>`).join(""));
  h+=sect("hl","8  Herausforderung und Lösung",
   fld("herausf","Herausforderung",{area:1,rows:5,lim:LIM.herausf})+fld("loesung","Lösung der ICT",{area:1,rows:5,lim:LIM.loesung}));
- h+=sect("partner","9  Partner und Ansprechpartner",
-  D.partner.map((p,i)=>`<div class="tile"><div class="row r2">${fld(`partner.${i}.l`,"Rolle")}${fld(`partner.${i}.f`,"Firma, Sitz")}</div></div>`).join("")+
+ h+=sect("partner","9  Beteiligte Partner und Schnittstellen",
+  D.partner.map((p,i)=>`<div class="tile"><div class="row r2">${fld(`partner.${i}.l`,"Rolle")}${fld(`partner.${i}.f`,"Firma, Sitz")}</div></div>`).join(""));
+ h+=sect("ap","10  Ansprechpartner Referenz",
   `<div class="note">Ansprechpartner der Referenz nur nach Freigabe des Kunden eintragen.</div><div class="row r2">${fld("ap.firma","Unternehmen")}${fld("ap.name","Name")}</div><div class="row r2">${fld("ap.funktion","Funktion")}${fld("ap.kontakt","Telefon / E-Mail")}</div>`);
  $("#form").innerHTML=h;
  open.forEach(id=>{const d=document.querySelector(`#form details[data-sec="${id}"]`);if(d)d.open=true});
@@ -334,7 +336,8 @@ const SECFIELDS={
   seite2:()=>[D.ausgang,...D.tech.slice(0,3).flatMap(t=>[t.k,t.u,t.e])],
  ablauf:()=>D.phasen.flatMap(p=>[p.z,p.x]),
  hl:()=>[D.herausf,D.loesung],
- partner:()=>[...D.partner.map(p=>p.f),D.ap.firma,D.ap.name,D.ap.funktion,D.ap.kontakt],
+ partner:()=>D.partner.map(p=>p.f),
+ ap:()=>[D.ap.firma,D.ap.name,D.ap.funktion,D.ap.kontakt],
  quellen:()=>[],
 };
 function setDot(k,done){const d=document.querySelector(`[data-dot="${k}"]`);if(d){d.classList.toggle("done",!!done);d.title=done?"Abgeschlossen":"Noch nicht abgeschlossen"}}
@@ -382,7 +385,7 @@ function techHeights(rs,cw){
  let budget=4.05-.65*rs.length;
  return need.map(n=>{if(n>1&&budget>=.15){budget-=.15;return .8}return .65})}
 function page1(){
- let h=head();const hd=D.hide||{},LY=refLayout(hd).p1;
+ let h=head();const hd=Object.assign({},D.hide,{bilder:0}),LY=refLayout(hd).p1;
  h+=T("h1",1.5,2.2,14,1,D.kunde,"[Kunde / Auftraggeber]","white-space:nowrap","","kunde")+T("h2",1.5,3.2,18,.7,D.veranstaltung,"[Veranstaltung, Ort]","","","veranstaltung");
  h+=R(1.5,4.2,1.8,.1,"#4D49BC");
  if(LY.bild!==undefined){h+=imgb(D.img.bild1,1.5,4.6,18,9.2,"Hauptbild 180 × 92 mm","bild1");
@@ -429,6 +432,8 @@ function page2(){
  const px=[1.5,6.1,10.6,15.2];
  h+=R(1.5,20.7+o,.1,.4,"#4D49BC")+T("hd",1.8,20.6+o,17.7,.5,HH("partner"),"","","h.partner");
  D.partner.forEach((p,i)=>{h+=R(px[i],21.3+o,4.3,1.5,"#F0EEF4")+T("tll",px[i]+.3,21.6+o,3.7,.3,p.l,"","",`partner.${i}.l`)+T("tlv",px[i]+.3,21.9+o,3.7,.8,p.f,"[Firma, Sitz]","font-size:7.5pt","",`partner.${i}.f`)});
+ }
+ if(LY.ap!==undefined){const o=LY.ap;
  h+=R(1.5,24.7+o,18,3.1,"#F0EEF4")+T("",2,25.1+o,8,.4,HH("ap"),"","font-size:6.5pt;font-weight:700;color:#625F73","h.ap");
  const a=D.ap,L=[[HH("ap1"),a.firma,"[Firma]",2,25.7+o,"ap1"],[HH("ap2"),a.name,"[Vorname Nachname]",10.8,25.7+o,"ap2"],[HH("ap3"),a.funktion,"[Funktion]",2,26.4+o,"ap3"],[HH("ap4"),a.kontakt,"[Telefon / E-Mail]",10.8,26.4+o,"ap4"]];
  L.forEach(([l,v,ph,x,y,k])=>{h+=T("",x,y,2.6,.5,l,"","font-size:7pt;font-weight:700","h."+k)+T("",x+2.6,y,6,.5,v,ph,"font-size:7.5pt;color:#534B5E;white-space:nowrap","",["ap.firma","ap.name","ap.funktion","ap.kontakt"][+k.slice(2)-1])});}
@@ -521,7 +526,7 @@ document.addEventListener("drop",e=>{const d=e.target.closest?.("[data-drop]");i
 function slug(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ß/g,"ss").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40)}
 function baseName(){return `Referenz_${D.nr||"XX"}_${slug(D.kunde)||"Kunde"}_${slug(D.veranstaltung.split(",")[0])||"Event"}`}
 function openPoints(){
- const out=[],hd=D.hide||{};const add=(sec,l,v)=>{if(isOpen(v))out.push(`${sec}: ${l}`)};
+ const out=[],hd=Object.assign({},D.hide,{bilder:0});const add=(sec,l,v)=>{if(isOpen(v))out.push(`${sec}: ${l}`)};
  add("Kopf","Referenz-Nr.",D.nr);add("Kopf","Veranstaltungsart",D.art);add("Kopf","Kunde",D.kunde);add("Kopf","Veranstaltung, Ort",D.veranstaltung);
  if(!hd.kacheln)D.tiles.forEach(t=>{if(!t.off)add("Kachel",t.l,t.v)});
  if(!hd.projekt){add("Projekt","Projekttext",D.projekt);add("Projekt","Leistungen der ICT",D.leistungen);D.bezug.forEach((b,i)=>add("Bezug zur Ausschreibung",String(i+1),b))}
@@ -531,8 +536,8 @@ function openPoints(){
  const tr=D.tech.filter(t=>t.k||t.u||t.e);if(!hd.seite2&&tr.length<3)out.push("Technik: weniger als 3 Zeilen");if(!hd.seite2)tr.forEach(t=>{if(isOpen(t.u)||isOpen(t.e)||isOpen(t.k))out.push(`Technik: Zeile "${t.k||"?"}" unvollständig`)});
  if(!hd.ablauf)D.phasen.forEach(p=>{add("Ablauf",p.t+" Zeitraum",p.z);add("Ablauf",p.t+" Inhalt",p.x)});
  if(!hd.hl){add("Seite 2","Herausforderung",D.herausf);add("Seite 2","Lösung der ICT",D.loesung)}
- if(!hd.partner){D.partner.forEach(p=>add("Partner",p.l,p.f));
- add("Ansprechpartner","Unternehmen",D.ap.firma);add("Ansprechpartner","Name",D.ap.name);add("Ansprechpartner","Funktion",D.ap.funktion);add("Ansprechpartner","Kontakt",D.ap.kontakt)}
+ if(!hd.partner)D.partner.forEach(p=>add("Partner",p.l,p.f));
+ if(!hd.ap){add("Ansprechpartner","Unternehmen",D.ap.firma);add("Ansprechpartner","Name",D.ap.name);add("Ansprechpartner","Funktion",D.ap.funktion);add("Ansprechpartner","Kontakt",D.ap.kontakt)}
  for(const k in LIM)if((D[k]||"").length>LIM[k])out.push(`Länge: ${k} überschreitet ${LIM[k]} Zeichen`);
  return out;
 }
@@ -834,9 +839,10 @@ const WIZ_BLOCKS={
  seite2:{t:"Seite 2: Ausgangssituation und Technik",n:"6",w:"Beschreiben Sie Anforderungen des Kunden und die eingesetzte Technik mit Mengen und Größen.",open:()=>SECFIELDS.seite2().some(isOpen)},
  ablauf:{t:"Projektablauf",n:"7",w:"Zeitraum und Inhalt der vier Phasen zeigen, dass die ICT strukturiert plant und abbaut.",open:()=>SECFIELDS.ablauf().some(isOpen)},
  hl:{t:"Herausforderung und Lösung",n:"8",w:"Was war besonders schwierig und wie hat die ICT es gelöst? Das ist der stärkste Beleg für Erfahrung.",open:()=>SECFIELDS.hl().some(isOpen)},
- partner:{t:"Partner und Ansprechpartner",n:"9",w:"Beteiligte Firmen und der Ansprechpartner für Referenzkundengespräche. Ansprechpartner nur nach Freigabe des Kunden eintragen.",open:()=>SECFIELDS.partner().some(isOpen)}
+ partner:{t:"Beteiligte Partner und Schnittstellen",n:"9",w:"Beteiligte Firmen mit Rolle und Sitz.",open:()=>SECFIELDS.partner().some(isOpen)},
+ ap:{t:"Ansprechpartner Referenz",n:"10",w:"Ansprechpartner für Referenzkundengespräche. Nur nach Freigabe des Kunden eintragen.",open:()=>SECFIELDS.ap().some(isOpen)}
 };
-const WIZ_ORDER=["quellen","kopf","kacheln","projekt","bilder","seite2","ablauf","hl","partner"];
+const WIZ_ORDER=["quellen","kopf","kacheln","projekt","bilder","seite2","ablauf","hl","partner","ap"];
 function wizFields(id){
  let h="";const o=v=>isOpen(v);
  if(id==="quellen"){
@@ -872,12 +878,14 @@ function wizFields(id){
  }
  if(id==="partner"){
   D.partner.forEach((p,i)=>{if(o(p.f))h+=fld(`partner.${i}.f`,p.l,{ph:"Firma, Sitz"})});
+ }
+ if(id==="ap"){
   [["firma","Ansprechpartner: Unternehmen"],["name","Ansprechpartner: Name"],["funktion","Ansprechpartner: Funktion"],["kontakt","Ansprechpartner: Telefon / E-Mail"]].forEach(([k,l])=>{if(o(D.ap[k]))h+=fld("ap."+k,l)});
  }
  return h;
 }
 function wizStart(){
- WZ.ids=WIZ_ORDER.filter(id=>!(D.hide&&D.hide[id])&&WIZ_BLOCKS[id].open());WZ.i=0;WZ.on=true;
+ WZ.ids=WIZ_ORDER.filter(id=>(id==="bilder"||!(D.hide&&D.hide[id]))&&WIZ_BLOCKS[id].open());WZ.i=0;WZ.on=true;
  if(!WZ.ids.length){dlgW(`<h3>Alles vollständig</h3><div>In keinem Block sind Punkte offen.</div><div style="text-align:right"><button class="pri" data-wz="close">Schließen</button></div>`);return}
  wizRender();
 }
