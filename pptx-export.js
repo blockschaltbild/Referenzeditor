@@ -146,6 +146,11 @@
     if (ext) { ext.setAttribute("cx", String(Math.round(w))); if (h !== null) ext.setAttribute("cy", String(Math.round(h))); }
   }
 
+  function shiftY(shape, dy) {
+    var off = shape.getElementsByTagName("a:off")[0];
+    if (off) off.setAttribute("y", String(Math.round(parseFloat(off.getAttribute("y")) + dy)));
+  }
+
   function setText(shape, text, color) {
     var txBody = firstEl(shape, "txBody");
     if (!txBody) return;
@@ -487,16 +492,38 @@
       setText(b[60], footer, null);
     }
 
+    var HD = D.hide && typeof D.hide === "object" ? D.hide : {};
+    var LY = global.refLayout ? global.refLayout(HD) : { p1: {}, p2: {} };
+    var CM = 360000;
+    function grp(arr, from, to, hidden, dy) {
+      for (var gi = from; gi <= to; gi++) {
+        if (hidden) drop.push(arr[gi]);
+        else if (dy) shiftY(arr[gi], dy * CM);
+      }
+    }
+    if (HD.bilder) {
+      [5, 6, 37, 38].forEach(function (ix) { drop.push(a[ix]); });
+      [32, 35].forEach(function (ix) { setXfrm(a[ix], 1.8 * CM, parseFloat(a[ix].getElementsByTagName("a:off")[0].getAttribute("y")), 17.7 * CM, null); });
+      [33, 36].forEach(function (ix) { setXfrm(a[ix], 1.5 * CM, parseFloat(a[ix].getElementsByTagName("a:off")[0].getAttribute("y")), 18 * CM, null); });
+    }
+    grp(a, 7, 30, !!HD.kacheln, LY.p1.kach);
+    grp(a, 31, 36, !!HD.projekt, LY.p1.proj);
+    if (!HD.bilder) grp(a, 37, 38, !!HD.projekt, LY.p1.proj);
+    grp(a, 39, 44, !!HD.projekt, LY.p1.bezug);
+    grp(b, 5, 10, !!HD.seite2, LY.p2.s2);
+    grp(b, 11, 28, !!HD.ablauf, LY.p2.ab);
+    grp(b, 29, 34, !!HD.hl, LY.p2.hl);
+    grp(b, 35, 58, !!HD.partner, LY.p2.pa);
+
     var img = D.img && typeof D.img === "object" ? D.img : {};
     var q1 = str(D.bildquelle1);
     var q2 = str(D.bildquelle2);
     var mediaIdx = nextMediaIndex(zip);
     var rel1 = await nextRelId(zip, "ppt/slides/_rels/slide1.xml.rels");
     var nextId = maxShapeId(a) + 1;
-    var slots = [
-      [a[5], img.bild1, a[6], q1],
-      [a[37], img.bild2, a[38], q2]
-    ];
+    var slots = [];
+    if (!HD.bilder) slots.push([a[5], img.bild1, a[6], q1]);
+    if (!HD.bilder && !HD.projekt) slots.push([a[37], img.bild2, a[38], q2]);
     for (var si = 0; si < slots.length; si++) {
       var slot = slots[si];
       var data = slot[1] && typeof slot[1] === "object" ? str(slot[1].data) : "";
