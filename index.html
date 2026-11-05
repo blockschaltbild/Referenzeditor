@@ -40,6 +40,10 @@ summary .rt{display:flex;align-items:center;gap:10px}
 .dot.done{background:#2e9e5b;border-color:#2e9e5b}
 .arr{flex:none;width:8px;height:8px;border-right:2px solid var(--violet);border-bottom:2px solid var(--violet);transform:rotate(45deg) translate(-2px,-2px);transition:transform .2s;margin-right:3px}
 details[open]>summary .arr{transform:rotate(-135deg) translate(-2px,-2px)}
+button.eye{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;border-radius:6px;border:1px solid var(--g5);background:#fff;color:var(--violet);cursor:pointer}
+button.eye:hover{background:var(--l3)}
+details.hid>summary .ttl{color:var(--g3)}details.hid .eye{color:var(--g3);background:var(--g6)}
+.hidtag{font-weight:600;font-size:10px;color:var(--g2);background:var(--g5);border-radius:10px;padding:2px 8px;margin-left:4px}
 summary .cnt{font-weight:600;font-size:10px;background:var(--salmon);color:#000;border-radius:10px;padding:2px 8px}
 summary .cnt.ok{background:var(--l3);color:var(--violet)}
 .sec{padding:4px 12px 12px;display:grid;gap:10px}
@@ -191,7 +195,7 @@ window.uiAlert=(t,o)=>uiMsg(t,o);window.uiConfirm=(t,o)=>uiMsg(t,Object.assign({
 <script src="pptx-export.js"></script>
 <script src="cloud.js"></script>
 <script>
-const APP_VERSION="1.2.0";
+const APP_VERSION="1.3.0";
 (function(){const v=document.getElementById("ver");v.textContent="Version "+APP_VERSION;
 if(!/^https?:/.test(location.protocol))return;
 fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APP_VERSION="([^"]+)"/);if(m&&m[1]!==APP_VERSION){v.innerHTML="";const a=document.createElement("a");a.href="#";a.style.cssText="color:#F9D057;font-weight:700";a.textContent="Version "+APP_VERSION+" – neue Version "+m[1]+" verfügbar, hier neu laden";a.onclick=e=>{e.preventDefault();location.reload()};v.appendChild(a)}else if(m){v.textContent="Version "+APP_VERSION+" (aktuell)"}}).catch(()=>{})})();
@@ -210,7 +214,7 @@ const H_DEF=[["projekt","Das Projekt","Seite 1"],["leistungen","Leistungen der I
 const ART_OPT=["MESSE / MARKENAUFTRITT","KUNDENKONGRESS / LIVE-BÜHNE","FIRMENJUBILÄUM / GALA-EVENT","HYBRIDVERANSTALTUNG","STREAMING / VIRTUELLE VERANSTALTUNG","MANAGEMENT- / VORSTANDSVERANSTALTUNG","TOWNHALL / BETRIEBSVERSAMMLUNG","PRESSEKONFERENZ / PRODUKTPRÄSENTATION","SCHULUNG / TRAINING","SONSTIGES"];
 function blank(){return{
  nr:"",art:"",kunde:"",veranstaltung:"",
- tiles:TILE_DEF.map(t=>({l:t[0],v:""})),
+ hide:{},tiles:TILE_DEF.map(t=>({l:t[0],v:""})),
  projekt:"",leistungen:"",bezug:BZ_DEF.map(()=>""),
  bildquelle1:"",bildquelle2:"",
  ausgang:"",tech:Array.from({length:5},()=>({k:"",u:"",e:""})),
@@ -223,6 +227,16 @@ function blank(){return{
 }}
 let D=blank();
 window.tileGrid=function(n){if(n<1)return[];if(n===1)return[{col:0,cols:1,row:0,span:2}];const t=Math.ceil(n/2),b=n-t,o=[];for(let c=0;c<t;c++)o.push({col:c,cols:t,row:0,span:1});for(let c=0;c<b;c++)o.push({col:c,cols:b,row:1,span:1});return o};
+window.refLayout=function(hd){hd=hd||{};const a={},b={};let c=4.6;
+if(!hd.bilder){a.bild=0;c+=9.7}
+if(!hd.kacheln){a.kach=c-14.3;c+=4.3}
+if(!hd.projekt){a.proj=c-18.6;c+=7.3;a.bezug=c-25.9;c+=2.1}
+c=5;if(!hd.seite2){b.s2=c-5;c+=8.4}
+if(!hd.ablauf){b.ab=c-13.4;c+=4.2}
+if(!hd.hl){b.hl=c-17.6;c+=3}
+if(!hd.partner){b.pa=c-20.6;c+=7.2}
+return{p1:a,p2:b}};
+const HIDEABLE=["kacheln","projekt","bilder","seite2","ablauf","hl","partner"];
 const visTiles=()=>D.tiles.map((t,i)=>i).filter(i=>!D.tiles[i].off);
 const LIM={projekt:520,ausgang:450,herausf:330,loesung:330};
 const $=s=>document.querySelector(s);
@@ -240,7 +254,8 @@ function fld(path,label,o={}){
   `<input type="text" ${attrs} value="${esc(v)}">`;
  return `<label class="f${o.date?" dt":""}">${esc(label)}${o.h?` <span class="h">${esc(o.h)}</span>`:""}${el}${lim}</label>`;
 }
-function sect(id,title,body,open){return `<details data-sec="${id}"${open?" open":""}><summary><span class="ttl"><i class="dot" data-dot="${id}"></i>${esc(title)}</span><span class="rt"><span class="cnt" data-cnt="${id}"></span><i class="arr"></i></span></summary><div class="sec">${body}</div></details>`}
+const EYE_ON='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',EYE_OFF='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function sect(id,title,body,open){const can=HIDEABLE.includes(id),hid=can&&D.hide&&D.hide[id];return `<details data-sec="${id}"${open?" open":""}${hid?' class="hid"':""}><summary><span class="ttl">${can?`<button type="button" class="eye" data-eye="${id}" title="${hid?"Gruppe im Blatt wieder einblenden":"Gruppe im Blatt ausblenden"}" aria-label="${hid?"Gruppe einblenden":"Gruppe ausblenden"}">${hid?EYE_OFF:EYE_ON}</button>`:""}<i class="dot" data-dot="${id}"></i>${esc(title)}${hid?' <span class="hidtag">ausgeblendet</span>':""}</span><span class="rt"><span class="cnt" data-cnt="${id}"></span><i class="arr"></i></span></summary><div class="sec">${body}</div></details>`}
 
 const SRCON={};
 function srcFld(p,label){return (getp(p)||SRCON[p])?fld(p,label,{ph:"Foto: Name / Quelle"}):`<div><button class="sm" data-act="showsrc" data-k="${p}">+ Bildquelle angeben</button></div>`}
@@ -367,49 +382,56 @@ function techHeights(rs,cw){
  let budget=4.05-.65*rs.length;
  return need.map(n=>{if(n>1&&budget>=.15){budget-=.15;return .8}return .65})}
 function page1(){
- let h=head();
+ let h=head();const hd=D.hide||{},LY=refLayout(hd).p1;
  h+=T("h1",1.5,2.2,14,1,D.kunde,"[Kunde / Auftraggeber]","white-space:nowrap","","kunde")+T("h2",1.5,3.2,18,.7,D.veranstaltung,"[Veranstaltung, Ort]","","","veranstaltung");
  h+=R(1.5,4.2,1.8,.1,"#4D49BC");
- h+=imgb(D.img.bild1,1.5,4.6,18,9.2,"Hauptbild 180 × 92 mm","bild1");
- h+=(D.bildquelle1.trim()?T("cap",1.5,13.9,18,.3,D.bildquelle1,"","","","bildquelle1"):"");
- {const vi=visTiles(),g=tileGrid(vi.length),W=18.1,gp=.3,H=1.7,y0=14.3,gy=.2;
+ if(LY.bild!==undefined){h+=imgb(D.img.bild1,1.5,4.6,18,9.2,"Hauptbild 180 × 92 mm","bild1");
+ h+=(D.bildquelle1.trim()?T("cap",1.5,13.9,18,.3,D.bildquelle1,"","","","bildquelle1"):"")}
+ if(LY.kach!==undefined){const vi=visTiles(),g=tileGrid(vi.length),W=18.1,gp=.3,H=1.7,y0=14.3+LY.kach,gy=.2;
  vi.forEach((i,k)=>{const t=D.tiles[i],c=g[k],w=(W-(c.cols-1)*gp)/c.cols,x=1.5+c.col*(w+gp),y=y0+c.row*(H+gy),hh=c.span*H+(c.span-1)*gy;
   h+=R(x,y,w,hh,"#F0EEF4")+T("tll",x+.3,y+.3,w-.6,.3,t.l,"","",`tiles.${i}.l`)+T("tlv",x+.3,y+.7,w-.6,hh-.8,t.v,"["+TILE_DEF[i][1]+"]","","",`tiles.${i}.v`);});}
- h+=R(1.5,18.6,.1,.4,"#4D49BC")+T("hd",1.8,18.6,10.9,.5,HH("projekt"),"","","h.projekt")+`<div class="t bd${D.projekt.trim()?"":" ph"} hk" data-cv="projekt" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:19.2cm;width:11.2cm;height:3.2cm">${esc(D.projekt.trim()?D.projekt:"[Kurzbeschreibung in 3–5 Sätzen]")}</div>`;
- h+=R(1.5,22.6,.1,.4,"#4D49BC")+T("hd",1.8,22.6,10.9,.5,HH("leistungen"),"","","h.leistungen");
+ if(LY.proj!==undefined){const po=LY.proj,pw=hd.bilder?18:11.2;
+ h+=R(1.5,18.6+po,.1,.4,"#4D49BC")+T("hd",1.8,18.6+po,pw-.3,.5,HH("projekt"),"","","h.projekt")+`<div class="t bd${D.projekt.trim()?"":" ph"} hk" data-cv="projekt" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:${19.2+po}cm;width:${pw}cm;height:3.2cm">${esc(D.projekt.trim()?D.projekt:"[Kurzbeschreibung in 3–5 Sätzen]")}</div>`;
+ h+=R(1.5,22.6+po,.1,.4,"#4D49BC")+T("hd",1.8,22.6+po,pw-.3,.5,HH("leistungen"),"","","h.leistungen");
  const ls=D.leistungen.split("\n").filter(x=>x.trim()).slice(0,4);
  const ll=ls.length?ls:["[Beratung und technische Planung]","[Lieferung, Aufbau und Inbetriebnahme]","[Technische Betreuung und Regie]","[Rückbau und Dokumentation]"];
- h+=`<div class="t bul${ls.length?"":" ph"} hk" data-cv="leistungen" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:23.2cm;width:11.2cm;height:2.5cm">${ll.map(x=>"■  "+esc(x)).join("\n")}</div>`;
- h+=imgb(D.img.bild2,13.3,18.6,6.2,6.8,"Zweitbild 62 × 68 mm","bild2")+(D.bildquelle2.trim()?T("cap",13.3,25.4,6.2,.3,D.bildquelle2,"","","","bildquelle2"):"");
- h+=R(1.5,25.9,18,2.1,"#3E0D81")+T("",2,26.2,17,.4,HH("bezug"),"","font-size:6.5pt;font-weight:700;color:#fff","h.bezug");
+ h+=`<div class="t bul${ls.length?"":" ph"} hk" data-cv="leistungen" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:${23.2+po}cm;width:${pw}cm;height:2.5cm">${ll.map(x=>"■  "+esc(x)).join("\n")}</div>`;
+ if(!hd.bilder)h+=imgb(D.img.bild2,13.3,18.6+po,6.2,6.8,"Zweitbild 62 × 68 mm","bild2")+(D.bildquelle2.trim()?T("cap",13.3,25.4+po,6.2,.3,D.bildquelle2,"","","","bildquelle2"):"");}
+ if(LY.bezug!==undefined){const bo=LY.bezug;
+ h+=R(1.5,25.9+bo,18,2.1,"#3E0D81")+T("",2,26.2+bo,17,.4,HH("bezug"),"","font-size:6.5pt;font-weight:700;color:#fff","h.bezug");
  const bx=[2,6.3,10.6,14.9];
- D.bezug.forEach((b,i)=>{const e=!b.trim();h+=`<div class="t hk${e?" ph":""}" data-cv="bezug.${i}" title="Klicken zum Bearbeiten" data-ov style="left:${bx[i]}cm;top:26.8cm;width:4.1cm;height:1.0cm;font-size:7.5pt;font-weight:700;color:${e?"#8977F3":"#DDD8FB"}">${esc("✓  "+(e?"["+BZ_DEF[i]+"]":b))}</div>`});
+ D.bezug.forEach((b,i)=>{const e=!b.trim();h+=`<div class="t hk${e?" ph":""}" data-cv="bezug.${i}" title="Klicken zum Bearbeiten" data-ov style="left:${bx[i]}cm;top:${26.8+bo}cm;width:4.1cm;height:1.0cm;font-size:7.5pt;font-weight:700;color:${e?"#8977F3":"#DDD8FB"}">${esc("✓  "+(e?"["+BZ_DEF[i]+"]":b))}</div>`});}
  return h+foot(1);
 }
 function page2(){
- let h=head();
+ let h=head();const hd=D.hide||{},LY=refLayout(hd).p2;
  h+=T("h1",1.5,2.2,18,1,HH("details"),"","","h.details")+T("h2",1.5,3.2,18,.7,[D.kunde,D.veranstaltung].filter(Boolean).join(" – "),"[Kunde] – [Veranstaltung]");
  h+=R(1.5,4.2,1.8,.1,"#4D49BC");
- h+=R(1.5,5.1,.1,.4,"#4D49BC")+T("hd",1.8,5,17.7,.5,HH("ausgang"),"","","h.ausgang");
- h+=`<div class="t bd${D.ausgang.trim()?"":" ph"} hk" data-cv="ausgang" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:5.7cm;width:18cm;height:2cm">${esc(D.ausgang.trim()?D.ausgang:"[Ausgangslage und Anforderungen des Kunden]")}</div>`;
- h+=R(1.5,8.1,.1,.4,"#4D49BC")+T("hd",1.8,8,17.7,.5,HH("technik"),"","","h.technik");
+ if(LY.s2!==undefined){const o=LY.s2;
+ h+=R(1.5,5.1+o,.1,.4,"#4D49BC")+T("hd",1.8,5+o,17.7,.5,HH("ausgang"),"","","h.ausgang");
+ h+=`<div class="t bd${D.ausgang.trim()?"":" ph"} hk" data-cv="ausgang" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:${5.7+o}cm;width:18cm;height:2cm">${esc(D.ausgang.trim()?D.ausgang:"[Ausgangslage und Anforderungen des Kunden]")}</div>`;
+ h+=R(1.5,8.1+o,.1,.4,"#4D49BC")+T("hd",1.8,8+o,17.7,.5,HH("technik"),"","","h.technik");
  const cw=[5.5,4,8.5],cx=[1.5,7,11];
- [HH("th1"),HH("th2"),HH("th3")].forEach((c,i)=>h+=`<div class="th hk" data-edit="h.th${i+1}" title="Klicken zum Umbenennen" style="left:${cx[i]}cm;top:8.7cm;width:${cw[i]}cm;height:.65cm;padding:.2cm .2cm 0">${c}</div>`);
+ [HH("th1"),HH("th2"),HH("th3")].forEach((c,i)=>h+=`<div class="th hk" data-edit="h.th${i+1}" title="Klicken zum Umbenennen" style="left:${cx[i]}cm;top:${8.7+o}cm;width:${cw[i]}cm;height:.65cm;padding:.2cm .2cm 0">${c}</div>`);
  const idx=D.tech.map((r,i)=>i).filter(i=>{const r=D.tech[i];return r.k||r.u||r.e});const rows=idx.map(i=>D.tech[i]);const rr=rows.length?rows:[{k:"[Komponente]",u:"[Menge / Größe]",e:"[Einsatzzweck]"}];
  const nxt=D.tech.findIndex(r=>!(r.k||r.u||r.e));
- const rs=rr.slice(0,5),hs=techHeights(rs,cw);let yy=9.35;
+ const rs=rr.slice(0,5),hs=techHeights(rs,cw);let yy=9.35+o;
  rs.forEach((r,j)=>{const y=yy,rh=hs[j];yy+=rh;const e=!rows.length,ri=rows.length?idx[j]:(nxt<0?D.tech.length:nxt);[r.k,r.u,r.e].forEach((v,i)=>h+=`<div class="td t hk${e?" ph":""}" data-cv="techrow.${ri}" data-row="${ri}" title="Ganze Zeile bearbeiten" style="left:${cx[i]}cm;top:${y}cm;width:${cw[i]}cm;height:${rh}cm;padding:${rh>.7?".12":".2"}cm .2cm 0;white-space:normal;word-break:break-word;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden">${esc(v)}</div>`)});
- if(rows.length&&rows.length<5&&nxt>=0&&yy+.65<=13.4){h+=`<div class="td t addrow" data-cv="techrow.${nxt}" title="Zeile hinzufügen (max. 5)" style="left:1.5cm;top:${yy}cm;width:18cm;height:.65cm">+  Zeile hinzufügen</div>`}
- h+=R(1.5,13.5,.1,.4,"#4D49BC")+T("hd",1.8,13.4,17.7,.5,HH("ablauf"),"","","h.ablauf");
+ if(rows.length&&rows.length<5&&nxt>=0&&yy+.65<=13.4+o){h+=`<div class="td t addrow" data-cv="techrow.${nxt}" title="Zeile hinzufügen (max. 5)" style="left:1.5cm;top:${yy}cm;width:18cm;height:.65cm">+  Zeile hinzufügen</div>`}}
+ if(LY.ab!==undefined){const o=LY.ab;
  const px=[1.5,6.1,10.6,15.2];
- D.phasen.forEach((p,i)=>{h+=R(px[i],14.1,4.3,.1,"#8977F3")+T("ph1",px[i],14.4,4.3,.4,p.t,"","",`phasen.${i}.t`)+T("ph2",px[i],14.9,4.3,.4,p.z,"[Zeitraum]","","",`phasen.${i}.z`)+`<div class="t ph3 hk${p.x.trim()?"":" ph"}" data-cv="phasen.${i}.x" title="Klicken zum Bearbeiten" data-ov style="left:${px[i]}cm;top:15.3cm;width:4.3cm;height:1.8cm">${esc(p.x.trim()?p.x:"["+PH_DEF[i][1]+"]")}</div>`});
- h+=R(1.5,17.7,.1,.4,"#4D49BC")+T("hd",1.8,17.6,8.4,.5,HH("herausf"),"","","h.herausf")+`<div class="t bd${D.herausf.trim()?"":" ph"} hk" data-cv="herausf" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:18.2cm;width:8.7cm;height:2.3cm">${esc(D.herausf.trim()?D.herausf:"[Besondere Herausforderung]")}</div>`;
- h+=R(10.8,17.7,.1,.4,"#4D49BC")+T("hd",11.1,17.6,8.4,.5,HH("loesung"),"","","h.loesung")+`<div class="t bd${D.loesung.trim()?"":" ph"} hk" data-cv="loesung" title="Klicken zum Bearbeiten" data-ov style="left:10.8cm;top:18.2cm;width:8.7cm;height:2.3cm">${esc(D.loesung.trim()?D.loesung:"[Wie die ICT die Herausforderung gelöst hat]")}</div>`;
- h+=R(1.5,20.7,.1,.4,"#4D49BC")+T("hd",1.8,20.6,17.7,.5,HH("partner"),"","","h.partner");
- D.partner.forEach((p,i)=>{h+=R(px[i],21.3,4.3,1.5,"#F0EEF4")+T("tll",px[i]+.3,21.6,3.7,.3,p.l,"","",`partner.${i}.l`)+T("tlv",px[i]+.3,21.9,3.7,.8,p.f,"[Firma, Sitz]","font-size:7.5pt","",`partner.${i}.f`)});
- h+=R(1.5,24.7,18,3.1,"#F0EEF4")+T("",2,25.1,8,.4,HH("ap"),"","font-size:6.5pt;font-weight:700;color:#625F73","h.ap");
- const a=D.ap,L=[[HH("ap1"),a.firma,"[Firma]",2,25.7,"ap1"],[HH("ap2"),a.name,"[Vorname Nachname]",10.8,25.7,"ap2"],[HH("ap3"),a.funktion,"[Funktion]",2,26.4,"ap3"],[HH("ap4"),a.kontakt,"[Telefon / E-Mail]",10.8,26.4,"ap4"]];
- L.forEach(([l,v,ph,x,y,k])=>{h+=T("",x,y,2.6,.5,l,"","font-size:7pt;font-weight:700","h."+k)+T("",x+2.6,y,6,.5,v,ph,"font-size:7.5pt;color:#534B5E;white-space:nowrap","",["ap.firma","ap.name","ap.funktion","ap.kontakt"][+k.slice(2)-1])});
+ h+=R(1.5,13.5+o,.1,.4,"#4D49BC")+T("hd",1.8,13.4+o,17.7,.5,HH("ablauf"),"","","h.ablauf");
+ D.phasen.forEach((p,i)=>{h+=R(px[i],14.1+o,4.3,.1,"#8977F3")+T("ph1",px[i],14.4+o,4.3,.4,p.t,"","",`phasen.${i}.t`)+T("ph2",px[i],14.9+o,4.3,.4,p.z,"[Zeitraum]","","",`phasen.${i}.z`)+`<div class="t ph3 hk${p.x.trim()?"":" ph"}" data-cv="phasen.${i}.x" title="Klicken zum Bearbeiten" data-ov style="left:${px[i]}cm;top:${15.3+o}cm;width:4.3cm;height:1.8cm">${esc(p.x.trim()?p.x:"["+PH_DEF[i][1]+"]")}</div>`});}
+ if(LY.hl!==undefined){const o=LY.hl;
+ h+=R(1.5,17.7+o,.1,.4,"#4D49BC")+T("hd",1.8,17.6+o,8.4,.5,HH("herausf"),"","","h.herausf")+`<div class="t bd${D.herausf.trim()?"":" ph"} hk" data-cv="herausf" title="Klicken zum Bearbeiten" data-ov style="left:1.5cm;top:${18.2+o}cm;width:8.7cm;height:2.3cm">${esc(D.herausf.trim()?D.herausf:"[Besondere Herausforderung]")}</div>`;
+ h+=R(10.8,17.7+o,.1,.4,"#4D49BC")+T("hd",11.1,17.6+o,8.4,.5,HH("loesung"),"","","h.loesung")+`<div class="t bd${D.loesung.trim()?"":" ph"} hk" data-cv="loesung" title="Klicken zum Bearbeiten" data-ov style="left:10.8cm;top:${18.2+o}cm;width:8.7cm;height:2.3cm">${esc(D.loesung.trim()?D.loesung:"[Wie die ICT die Herausforderung gelöst hat]")}</div>`;}
+ if(LY.pa!==undefined){const o=LY.pa;
+ const px=[1.5,6.1,10.6,15.2];
+ h+=R(1.5,20.7+o,.1,.4,"#4D49BC")+T("hd",1.8,20.6+o,17.7,.5,HH("partner"),"","","h.partner");
+ D.partner.forEach((p,i)=>{h+=R(px[i],21.3+o,4.3,1.5,"#F0EEF4")+T("tll",px[i]+.3,21.6+o,3.7,.3,p.l,"","",`partner.${i}.l`)+T("tlv",px[i]+.3,21.9+o,3.7,.8,p.f,"[Firma, Sitz]","font-size:7.5pt","",`partner.${i}.f`)});
+ h+=R(1.5,24.7+o,18,3.1,"#F0EEF4")+T("",2,25.1+o,8,.4,HH("ap"),"","font-size:6.5pt;font-weight:700;color:#625F73","h.ap");
+ const a=D.ap,L=[[HH("ap1"),a.firma,"[Firma]",2,25.7+o,"ap1"],[HH("ap2"),a.name,"[Vorname Nachname]",10.8,25.7+o,"ap2"],[HH("ap3"),a.funktion,"[Funktion]",2,26.4+o,"ap3"],[HH("ap4"),a.kontakt,"[Telefon / E-Mail]",10.8,26.4+o,"ap4"]];
+ L.forEach(([l,v,ph,x,y,k])=>{h+=T("",x,y,2.6,.5,l,"","font-size:7pt;font-weight:700","h."+k)+T("",x+2.6,y,6,.5,v,ph,"font-size:7.5pt;color:#534B5E;white-space:nowrap","",["ap.firma","ap.name","ap.funktion","ap.kontakt"][+k.slice(2)-1])});}
  return h+foot(2);
 }
 let zoom=null;
@@ -439,7 +461,7 @@ let saveT;
 function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem("ict_ref_editor",JSON.stringify(D))}catch(e){$("#ovinfo").insertAdjacentHTML("beforeend"," <b style='color:#c0392b'>Autospeichern voll – bitte in der Datenbank speichern</b>")}},400)}
 function renderSaveState(){const el=$("#saveState");if(!el)return;if(RO){el.textContent="Nur Ansicht – Referenz von "+(roOwner||"einem anderen Nutzer");return}el.textContent=dirty?"Ungespeicherte Änderungen":(currentCloudUpdatedAt?"Gespeichert in Datenbank um "+new Date(currentCloudUpdatedAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")}
 
-function applyRO(){document.querySelectorAll("#form input,#form textarea,#form select,#form button").forEach(e=>{e.disabled=true})}
+function applyRO(){document.querySelectorAll("#form input,#form textarea,#form select,#form button").forEach(e=>{e.disabled=!e.classList.contains("eye")})}
 function setRO(on,owner){RO=!!on;roOwner=owner||"";$("#app").classList.toggle("ro",RO);
  ["bSave","bPpt","bCheck"].forEach(i=>{const b=$("#"+i);if(b){if(b.dataset.t===undefined)b.dataset.t=b.title;b.disabled=RO;b.title=RO?"Bei fremden Referenzen nicht möglich (nur Ansicht)":b.dataset.t}});
  if(RO)applyRO();else renderForm();renderSaveState()}
@@ -449,6 +471,7 @@ document.addEventListener("dblclick",e=>{if(RO&&e.target.closest&&e.target.close
 document.addEventListener("drop",e=>{if(RO){e.stopImmediatePropagation();e.preventDefault()}},true);
 function changed(){if(RO)return;dirty=true;renderPreview();updateCounts();persist();renderSaveState()}
 
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-eye]");if(!b)return;e.preventDefault();e.stopPropagation();const id=b.dataset.eye;D.hide=D.hide||{};if(D.hide[id])delete D.hide[id];else D.hide[id]=true;renderForm();if(RO)renderPreview();else changed()},true);
 document.addEventListener("input",e=>{
  const p=e.target.dataset?.p;if(!p)return;
  if(e.target.tagName==="SELECT"&&p==="art"&&e.target.value==="__x"){askText("Veranstaltungsart","Bezeichnung der Veranstaltungsart eingeben.","","z. B. Kundenevent",v=>{setp("art",(v||"").toUpperCase());renderForm();changed();if(WZ.on)wizRender()});return}
@@ -498,18 +521,18 @@ document.addEventListener("drop",e=>{const d=e.target.closest?.("[data-drop]");i
 function slug(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ß/g,"ss").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40)}
 function baseName(){return `Referenz_${D.nr||"XX"}_${slug(D.kunde)||"Kunde"}_${slug(D.veranstaltung.split(",")[0])||"Event"}`}
 function openPoints(){
- const out=[];const add=(sec,l,v)=>{if(isOpen(v))out.push(`${sec}: ${l}`)};
+ const out=[],hd=D.hide||{};const add=(sec,l,v)=>{if(isOpen(v))out.push(`${sec}: ${l}`)};
  add("Kopf","Referenz-Nr.",D.nr);add("Kopf","Veranstaltungsart",D.art);add("Kopf","Kunde",D.kunde);add("Kopf","Veranstaltung, Ort",D.veranstaltung);
- D.tiles.forEach(t=>{if(!t.off)add("Kachel",t.l,t.v)});
- add("Projekt","Projekttext",D.projekt);add("Projekt","Leistungen der ICT",D.leistungen);D.bezug.forEach((b,i)=>add("Bezug zur Ausschreibung",String(i+1),b));
- if(!D.img.bild1)out.push("Bilder: Hauptbild fehlt");if(!D.img.bild2)out.push("Bilder: Zweitbild fehlt");add("Bilder","Quelle Hauptbild",D.bildquelle1);add("Bilder","Quelle Zweitbild",D.bildquelle2);
+ if(!hd.kacheln)D.tiles.forEach(t=>{if(!t.off)add("Kachel",t.l,t.v)});
+ if(!hd.projekt){add("Projekt","Projekttext",D.projekt);add("Projekt","Leistungen der ICT",D.leistungen);D.bezug.forEach((b,i)=>add("Bezug zur Ausschreibung",String(i+1),b))}
+ if(!hd.bilder){if(!D.img.bild1)out.push("Bilder: Hauptbild fehlt");if(!D.img.bild2)out.push("Bilder: Zweitbild fehlt");add("Bilder","Quelle Hauptbild",D.bildquelle1);add("Bilder","Quelle Zweitbild",D.bildquelle2)}
  if(!D.links.length)out.push("Links: keine Quelle angegeben");
- add("Seite 2","Ausgangssituation",D.ausgang);
- const tr=D.tech.filter(t=>t.k||t.u||t.e);if(tr.length<3)out.push("Technik: weniger als 3 Zeilen");tr.forEach(t=>{if(isOpen(t.u)||isOpen(t.e)||isOpen(t.k))out.push(`Technik: Zeile "${t.k||"?"}" unvollständig`)});
- D.phasen.forEach(p=>{add("Ablauf",p.t+" Zeitraum",p.z);add("Ablauf",p.t+" Inhalt",p.x)});
- add("Seite 2","Herausforderung",D.herausf);add("Seite 2","Lösung der ICT",D.loesung);
- D.partner.forEach(p=>add("Partner",p.l,p.f));
- add("Ansprechpartner","Unternehmen",D.ap.firma);add("Ansprechpartner","Name",D.ap.name);add("Ansprechpartner","Funktion",D.ap.funktion);add("Ansprechpartner","Kontakt",D.ap.kontakt);
+ if(!hd.seite2)add("Seite 2","Ausgangssituation",D.ausgang);
+ const tr=D.tech.filter(t=>t.k||t.u||t.e);if(!hd.seite2&&tr.length<3)out.push("Technik: weniger als 3 Zeilen");if(!hd.seite2)tr.forEach(t=>{if(isOpen(t.u)||isOpen(t.e)||isOpen(t.k))out.push(`Technik: Zeile "${t.k||"?"}" unvollständig`)});
+ if(!hd.ablauf)D.phasen.forEach(p=>{add("Ablauf",p.t+" Zeitraum",p.z);add("Ablauf",p.t+" Inhalt",p.x)});
+ if(!hd.hl){add("Seite 2","Herausforderung",D.herausf);add("Seite 2","Lösung der ICT",D.loesung)}
+ if(!hd.partner){D.partner.forEach(p=>add("Partner",p.l,p.f));
+ add("Ansprechpartner","Unternehmen",D.ap.firma);add("Ansprechpartner","Name",D.ap.name);add("Ansprechpartner","Funktion",D.ap.funktion);add("Ansprechpartner","Kontakt",D.ap.kontakt)}
  for(const k in LIM)if((D[k]||"").length>LIM[k])out.push(`Länge: ${k} überschreitet ${LIM[k]} Zeichen`);
  return out;
 }
@@ -854,7 +877,7 @@ function wizFields(id){
  return h;
 }
 function wizStart(){
- WZ.ids=WIZ_ORDER.filter(id=>WIZ_BLOCKS[id].open());WZ.i=0;WZ.on=true;
+ WZ.ids=WIZ_ORDER.filter(id=>!(D.hide&&D.hide[id])&&WIZ_BLOCKS[id].open());WZ.i=0;WZ.on=true;
  if(!WZ.ids.length){dlgW(`<h3>Alles vollständig</h3><div>In keinem Block sind Punkte offen.</div><div style="text-align:right"><button class="pri" data-wz="close">Schließen</button></div>`);return}
  wizRender();
 }
